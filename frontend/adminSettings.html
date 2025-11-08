@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Settings | Dry Cleaning</title>
+  <link rel="stylesheet" href="admindashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2 class="logo">Admin Panel</h2>
+      <ul class="nav-links">
+        <li><a href="admindashboard.html">Dashboard</a></li>
+        <li><a href="users.html">Users</a></li>
+        <li><a href="adminOrders.html">Orders</a></li>
+        <li><a href="adminSettings.html" class="active">Settings</a></li>
+        <li><a href="login.html" id="logout">Logout</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <header class="header">
+        <h1>Settings</h1>
+        <div class="user-info">
+          <span>Admin</span>
+          <img src="profile.jpg" alt="Profile" class="profile-pic">
+        </div>
+      </header>
+
+      <section class="settings-section">
+        <h2>Site Settings</h2>
+        <form id="settingsForm">
+          <label for="siteName">Site Name:</label>
+          <input type="text" id="siteName" name="siteName" required>
+
+          <label for="adminEmail">Admin Email:</label>
+          <input type="email" id="adminEmail" name="adminEmail" required>
+
+          <button type="submit">Update Settings</button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Sidebar active link highlight
+    const links = document.querySelectorAll('.sidebar .nav-links a');
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        links.forEach(l => l.classList.remove('active'));
+        e.target.classList.add('active');
+      });
+    });
+
+    // Logout
+    document.getElementById("logout").addEventListener("click", () => {
+      // optionally clear localStorage/sessionStorage if using auth
+      window.location.href = "login.html";
+    });
+
+    const form = document.getElementById("settingsForm");
+
+    // Fetch current settings from backend
+    async function loadSettings() {
+      try {
+        const res = await fetch("http://localhost:5002/api/admin/settings");
+        const data = await res.json();
+        if (data.siteName) document.getElementById("siteName").value = data.siteName;
+        if (data.adminEmail) document.getElementById("adminEmail").value = data.adminEmail;
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    }
+
+    loadSettings();
+
+    // Update settings
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const siteName = document.getElementById("siteName").value;
+      const adminEmail = document.getElementById("adminEmail").value;
+
+      try {
+        const res = await fetch("http://localhost:5002/api/admin/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ siteName, adminEmail })
+        });
+        const data = await res.json();
+        alert("Settings updated successfully!");
+      } catch (err) {
+        console.error("Error updating settings:", err);
+        alert("Failed to update settings.");
+      }
+    });
+  </script>
+</body>
+</html>

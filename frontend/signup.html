@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Sign Up</h1>
+    <p class="subtitle">Create an account</p>
+
+    <form id="signupForm">
+      <label>Full Name</label>
+      <input type="text" id="fullname" placeholder="Enter full name" required />
+
+      <label>Phone Number</label>
+      <input type="text" id="phone" placeholder="Enter phone number" required />
+
+      <label>Email</label>
+      <input type="email" id="email" placeholder="Enter email" required />
+
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter password" required />
+
+      <label>User Role</label>
+      <select id="role" required>
+        <option value="">-- Select Role --</option>
+        <option value="Admin">Admin</option>
+        <option value="Customer">Customer</option>
+        <option value="Staff">Staff</option>
+      </select>
+
+      <button type="button" id="signupBtn">Sign Up</button>
+    </form>
+
+    <p class="footer-text">Already have an account? <a href="login.html">Log In</a></p>
+  </div>
+
+  <script>
+  const signupForm = document.getElementById("signupForm");
+  const signupBtn = document.getElementById("signupBtn");
+
+  signupBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const userData = {
+      fullname: document.getElementById("fullname").value.trim(),
+      phone: document.getElementById("phone").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value.trim(),
+      role: document.getElementById("role").value
+    };
+
+    if (!userData.fullname || !userData.phone || !userData.email || !userData.password || !userData.role) {
+      console.log("Please fill in all fields.");
+      return;
+    }
+
+    signupBtn.disabled = true;
+    signupBtn.textContent = "Signing up...";
+
+    try {
+      console.log("Signup data being sent:", userData);
+      const res = await fetch("http://localhost:5002/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await res.json();
+console.log("Signup response data:", data);
+
+      if (res.ok) {
+        alert(data.message || "Account created successfully!");
+        window.location.href = "login.html";
+      } else {
+  alert(data.message || "Signup failed. Please try again.");
+      }
+
+    } catch (error) {
+      console.error("Signup error:", error);
+      alert("Network or server error. Please make sure your backend is running on port 5001.");
+    } finally {
+      signupBtn.disabled = false;
+      signupBtn.textContent = "Sign Up";
+    }
+  });
+</script>
+
+</body>
+</html>

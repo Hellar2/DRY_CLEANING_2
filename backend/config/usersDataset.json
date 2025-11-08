@@ -1,0 +1,242 @@
+[
+  {
+    "userId": "user-1",
+    "fullname": "Admin User",
+    "email": "admin@dryclean.com",
+    "phone": "0700123001",
+    "password": "$2a$10$B7DY/NMdDhPbRwMrg01oDuIB5h1dfIYKPUFpmNZR2CJyur0DjrKga",
+    "role": "Admin"
+  },
+  {
+    "userId": "user-2",
+    "fullname": "John Admin",
+    "email": "john.admin@dryclean.com",
+    "phone": "0700123002",
+    "password": "$2a$10$U7zy29A1zt99YNr5wlfmYuTy9Jt00pz.7U.1nSDrHOBBpvMQQhGoO",
+    "role": "Admin"
+  },
+  {
+    "userId": "user-3",
+    "fullname": "Sarah Staff",
+    "email": "sarah.staff@dryclean.com",
+    "phone": "0710123001",
+    "password": "$2a$10$mqlutKEfvfDI9EHPDYRTr.05abDZHXgAXKpdq1NwlgGilxL0LlWZG",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-4",
+    "fullname": "Mike Staff",
+    "email": "mike.staff@dryclean.com",
+    "phone": "0710123002",
+    "password": "$2a$10$C9lp.fsS1/CFIjHB8R3i7up5Eukk.GK.doGQQZjI8tbvRZQZY4382",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-5",
+    "fullname": "Emma Staff",
+    "email": "emma.staff@dryclean.com",
+    "phone": "0710123003",
+    "password": "$2a$10$Llqngxn/vngvJ1xfWDiP6eH3viaw0a3Brp44.SxCL0eqxIidwKrZ.",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-6",
+    "fullname": "Alice Customer",
+    "email": "alice@example.com",
+    "phone": "0720123001",
+    "password": "$2a$10$SWdA5UUmzkVCEQbtIrhile13D1JhoHV9zcsubadU9er0mVoOaccQK",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-7",
+    "fullname": "Bob Customer",
+    "email": "bob@example.com",
+    "phone": "0720123002",
+    "password": "$2a$10$7ok1BR0KqXwi8DYv3NJoSedmtva4vRWWEoh/P4Vm5TMz7huRuUTYi",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-8",
+    "fullname": "Charlie Customer",
+    "email": "charlie@example.com",
+    "phone": "0720123003",
+    "password": "$2a$10$XuN9KEmVCnex9vWm7rpPhexoVbako.r7A2qo0uyvnn7AAj13nkG26",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-9",
+    "fullname": "Diana Customer",
+    "email": "diana@example.com",
+    "phone": "0720123004",
+    "password": "$2a$10$A4mXP05eyTAobOo/XCJhNOf2D9muQG70IgpjUxRmMRfXOIPWl5/Uu",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-10",
+    "fullname": "Eve Customer",
+    "email": "eve@example.com",
+    "phone": "0720123005",
+    "password": "$2a$10$upZS7PHmPJ8lDdsFDQn4JuJxuslscEIiJwDTwp6..BLuC7Ng4/zzy",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762189374050-0otfidm0g",
+    "fullname": "liz",
+    "email": "liz@gmail.com",
+    "phone": "0768532353",
+    "password": "$2a$10$RIDjkumgON4QhPAjQTrOPexa.0kSayMHJhqFiSNX/A.926px/PBIu",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762189487002-e5n9o1px0",
+    "fullname": "liz",
+    "email": "lucky@gmail.com",
+    "phone": "0789564323",
+    "password": "$2a$10$/smy8FaJTtuDNuO8Z0yvoezNJp43kdEty2PKqhXGqrr5zjhuoD/My",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762189557378-rpa9uas6y",
+    "fullname": "lucky",
+    "email": "lizzy@gmail.com",
+    "phone": "0789547632",
+    "password": "$2a$10$sdcY9VcH7nC1kAgJRB3BGu0Cz4TkDDXcXnfhz/tzwE1KQGyWRv1.y",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762189727025-4ujjrw1w7",
+    "fullname": "lucky",
+    "email": "look@gmail.com",
+    "phone": "0785325773",
+    "password": "$2a$10$OIMgdpa9YLbp6FaBkACi1uD5vsxluwSWGBVQo18M8x7whnbF6lAkK",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-1762189842491-aqqnuu2sr",
+    "fullname": "lixxy",
+    "email": "lixxy@gmail.com",
+    "phone": "07556322142",
+    "password": "$2a$10$Os/6i8ZDa8R9OC8IxCXBzeFYfo0/Ifx3mC2PlfIoruWkBKzP32zqu",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-1762190312030-8f3niooaa",
+    "fullname": "monday",
+    "email": "monday@gmail.com",
+    "phone": "0786543210",
+    "password": "$2a$10$Kw4/XFD.FLSQQqInujRtpOpsAuQaXZp5660Av73TTvLnhrPU6w63S",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762190652811-7mfsmm700",
+    "fullname": "monday",
+    "email": "day@gmail.com",
+    "phone": "0765432104",
+    "password": "$2a$10$11z8uBGWWSf1Jvt625na.ev9.1w7sTIyJtoPqeZ97sqVJiJuY77L.",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762190836041-2dy45ermd",
+    "fullname": "tuesday",
+    "email": "tue@gmail.com",
+    "phone": "0713567456",
+    "password": "$2a$10$zU0lk09jAaJkjrVfXeKwEevgtT4GZNYfqM1oMJH5E4f4LdSV6p82W",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762191388202-kzvw885fr",
+    "fullname": "wednesday",
+    "email": "wed@gmail.com",
+    "phone": "076543210",
+    "password": "$2a$10$goJLJiwETcSitNsO3vDkPuuRVnEZHWIaJKW.5t1aXi4QLGD5gUi52",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762191819062-v3vhh9i2v",
+    "fullname": "thursdy",
+    "email": "wedn@gmail.com",
+    "phone": "0789654321",
+    "password": "$2a$10$gcoMKIr7LEN.h6dbbGDngOS0uWoiM/LD0CPOLU/nSm5Uw8L4hm32G",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762191983331-x38gw1njh",
+    "fullname": "tatu",
+    "email": "watu@gmail.com",
+    "phone": "0785325678",
+    "password": "$2a$10$LnW.3YNHwwFAkRR4rXJuF.FvbYnnq4CovHytb3npudpbPYHf1pQjS",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762192193846-7s2twxnve",
+    "fullname": "yolo",
+    "email": "yoloo@gmail.com",
+    "phone": "0787644676",
+    "password": "$2a$10$k8wlVUE/a40Ht.TLbI4.p.RlGjf6WCsiwHM9eyXsk.TzDGwYrGRh.",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762192830518-rmcxqhwmx",
+    "fullname": "Drake",
+    "email": "anything@gmail.com",
+    "phone": "0713629692",
+    "password": "$2a$10$iyV2xGICq72dyQCZFxKWO.ZgPJJ8Qp6tx9qc9yU3ccyA.L/7TMpg.",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762193003783-qz1p2zjo1",
+    "fullname": "Justin",
+    "email": "anything1@gmail.com",
+    "phone": "0785600815",
+    "password": "$2a$10$l18QHtUbJzb7eYDftqbNG.2WuXpVDfIDyU.7LcTus0UhtcSmwhfC2",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-1762193152794-xgdi4j7yk",
+    "fullname": "ngombe",
+    "email": "anyone@gmail.com",
+    "phone": "0724402467",
+    "password": "$2a$10$WJtTk.V4N7kFzmWwLEZcqeSFnPVGXRt6aShNqJ7hmxWeWNFd2Q9Wi",
+    "role": "Admin"
+  },
+  {
+    "userId": "user-1762418111536-4qdnha2w1",
+    "fullname": "hailey",
+    "email": "hailey@gmail.com",
+    "phone": "0798989898",
+    "password": "$2a$10$3p46fum3rGpXw6TZ4n/qs.Y7dzip.x1h9SRktAjE5ESf1YYh/RJ26",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762418378442-3x066pedp",
+    "fullname": "hike",
+    "email": "hike@gmail.com",
+    "phone": "0712121212",
+    "password": "$2a$10$2DiY2AlXQEURSWajdlCB8.AAg26A.z5Ygn5ia.2GhCb.og.KnXhOK",
+    "role": "Staff"
+  },
+  {
+    "userId": "user-1762418501617-055fs2aey",
+    "fullname": "hallar",
+    "email": "h@gmail.com",
+    "phone": "0776767676",
+    "password": "$2a$10$swqt9KYEuy3xYi6OXLGicOCGGMMhnl0Liau2PWe9izGAXLRYRJQgm",
+    "role": "Admin"
+  },
+  {
+    "userId": "user-1762424037356-3ia3e0l8e",
+    "fullname": "yyyyy",
+    "email": "y@gmail.com",
+    "phone": "0987654567",
+    "password": "$2a$10$fi9TZAW2FQWzFQ7QmLfQ4.HJB71mnqleyrrTct4W7W9nqn.soGITC",
+    "role": "Customer"
+  },
+  {
+    "userId": "user-1762424820548-pwpeof2om",
+    "fullname": "jack",
+    "email": "jack@gmail.com",
+    "phone": "0789876789",
+    "password": "$2a$10$4pFlA7IQntOD5vCSs7xuDutFqAPwCORUs4mkANavznmT6t/SksfLC",
+    "role": "Customer"
+  }
+]

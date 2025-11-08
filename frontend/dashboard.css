@@ -1,0 +1,164 @@
+/* ====== RESET ====== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ====== LAYOUT ====== */
+.dashboard {
+  display: flex;
+  height: 100vh;
+  background-color: #f2f4f7;
+}
+
+/* ====== SIDEBAR ====== */
+.sidebar {
+  width: 240px;
+  background-color: #1e2a38;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 30px;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.logo img {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background-color: #fff;
+}
+
+.logo h2 {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.sidebar nav ul {
+  list-style: none;
+  width: 100%;
+}
+
+.sidebar nav ul li {
+  padding: 15px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.sidebar nav ul li:hover,
+.sidebar nav ul li.active {
+  background-color: #32475b;
+}
+
+/* ====== MAIN CONTENT ====== */
+.main-content {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.main-content header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.main-content h1 {
+  font-size: 28px;
+  color: #333;
+}
+
+/* ====== STATS CARDS ====== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 250px);
+  grid-gap: 30px;
+  margin-bottom: 50px;
+}
+
+.stat-card {
+  background-color: #fff;
+  border-radius: 12px;
+  text-align: center;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-card h3 {
+  color: #555;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.stat-card p {
+  font-size: 32px;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+/* ====== BUTTONS SECTION ====== */
+.main-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 220px);
+  grid-gap: 25px;
+  justify-content: center;
+}
+
+.main-buttons button {
+  background-color: #4a90e2;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 15px 0;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-weight: 500;
+}
+
+.main-buttons button:hover {
+  background-color: #357abd;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
+  .dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 10px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .main-buttons {
+    grid-template-columns: 1fr;
+    width: 80%;
+  }
+}

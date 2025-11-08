@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders</title>
+  <link rel="stylesheet" href="admindashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <h2 class="logo">Admin Panel</h2>
+      <ul class="nav-links">
+        <li><a href="admindashboard.html">Dashboard</a></li>
+        <li><a href="users.html">Users</a></li>
+        <li><a href="adminOrders.html" class="active">Orders</a></li>
+        <li><a href="adminSettings.html">Settings</a></li>
+        <li><a href="#" id="logoutBtn">Logout</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <header class="header">
+        <h1>Orders</h1>
+      </header>
+
+      <section class="table-section">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Item</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const ordersTable = document.getElementById('ordersTable');
+    let orders = [];
+
+    async function fetchOrders() {
+      try {
+        const res = await fetch('http://localhost:5002/api/admin/orders');
+        orders = await res.json();
+        renderOrders(orders);
+      } catch(err) { console.error(err); }
+    }
+
+    function renderOrders(data){
+      ordersTable.innerHTML = '';
+      if(!data.length) {
+        ordersTable.innerHTML = '<tr><td colspan="6">No orders found</td></tr>';
+        return;
+      }
+      data.forEach(order=>{
+        const row = document.createElement('tr');
+        row.dataset.id = order._id;
+        row.innerHTML = `
+          <td>${order._id}</td>
+          <td>${order.customer}</td>
+          <td>${order.item}</td>
+          <td>${order.status}</td>
+          <td>${new Date(order.date).toLocaleDateString()}</td>
+          <td>
+            <button class="edit">Edit</button>
+            <button class="delete">Delete</button>
+          </td>
+        `;
+        ordersTable.appendChild(row);
+      });
+    }
+
+    ordersTable.addEventListener('click', async e=>{
+      const row = e.target.closest('tr');
+      if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('delete')) {
+        if(confirm("Delete this order?")) {
+          await fetch(`http://localhost:5002/api/admin/orders/${id}`, { method:'DELETE' });
+          fetchOrders();
+        }
+      }
+      if(e.target.classList.contains('edit')) {
+        alert(`Edit order ID: ${id}`);
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', e=>{
+      e.preventDefault();
+      window.location.href = 'login.html';
+    });
+
+    fetchOrders();
+  </script>
+</body>
+</html>

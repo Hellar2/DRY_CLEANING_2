@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment History - Dry Cleaning Service</title>
+<link rel="stylesheet" href="profile.css">
+<style>
+    body { font-family: Arial, sans-serif; background: #f8f9fa; margin:0; color:#333; }
+    .dashboard-container { display:flex; }
+    .sidebar { width:220px; background:#0b1220; color:#fff; min-height:100vh; padding:1rem; }
+    .sidebar .logo { font-size:1.5rem; font-weight:bold; margin-bottom:1rem; }
+    .sidebar .nav-menu { list-style:none; padding:0; }
+    .sidebar .nav-menu li { margin:0.5rem 0; }
+    .sidebar .nav-menu li a { color:#dbe7ff; text-decoration:none; display:block; padding:0.5rem; border-radius:4px; }
+    .sidebar .nav-menu li.active a { background:#3b82f6; color:#fff; }
+
+    .main-content { flex:1; padding:2rem; }
+    .content-header h1 { margin:0 0 0.5rem 0; }
+    .summary-cards { display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+    .summary-card { background:#fff; padding:1rem; border-radius:8px; flex:1; min-width:180px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    .summary-card h3 { margin:0 0 0.5rem 0; font-size:1rem; color:#555; }
+    .summary-card p { font-size:1.25rem; font-weight:bold; margin:0; }
+
+    .payment-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+    .payment-table th, .payment-table td { padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; }
+    .payment-table th { background:#f1f5f9; cursor:pointer; }
+    .payment-table tbody tr:hover { background:#f9fafb; }
+    .status-pill { padding:4px 10px; border-radius:9999px; font-size:12px; font-weight:bold; }
+    .status-paid { background:#dcfce7; color:#166534; }
+    .status-pending { background:#fef3c7; color:#92400e; }
+    .no-payments { text-align:center; padding:20px; color:#777; }
+    .filter-search { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .filter-search input, .filter-search select { padding:0.5rem 0.75rem; border-radius:6px; border:1px solid #ccc; flex:1; min-width:150px; }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <h2 class="logo">DRY CLEANING</h2>
+        <ul class="nav-menu">
+            <li><a href="cdashboard.html">Dashboard</a></li>
+            <li><a href="myOrders.html">My Orders</a></li>
+            <li><a href="profile.html">Profile</a></li>
+            <li class="active"><a href="payment-history.html">Payment History</a></li>
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="content-header">
+            <h1>Payment History</h1>
+            <p>Track all your payments here, including pending and completed orders.</p>
+        </header>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Total Payments</h3>
+                <p id="totalPayments">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Total Amount Paid</h3>
+                <p id="totalPaid">KES 0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Pending Payments</h3>
+                <p id="totalPending">KES 0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Last Payment</h3>
+                <p id="lastPayment">—</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-search">
+            <input type="text" id="searchInput" placeholder="Search by order ID or method">
+            <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+            </select>
+        </div>
+
+        <!-- Payment Table -->
+        <div style="overflow-x:auto;">
+            <table class="payment-table" id="paymentTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentBody"></tbody>
+            </table>
+        </div>
+        <div id="noPayments" class="no-payments" style="display:none;">No payment records found.</div>
+    </main>
+</div>
+
+<script>
+const formatKES = amount => `KES ${Number(amount).toLocaleString('en-KE')}`;
+
+let payments = [];
+
+function loadPayments() {
+    const saved = localStorage.getItem('dashboardData');
+    if (!saved) return showNoPayments();
+    const data = JSON.parse(saved);
+
+    // Consider completed (paid) and ready (pending) orders
+    payments = data.orderQueue.map(o => ({
+        id: o.id,
+        total: o.total,
+        date: o.pickupTime || o.timestamp,
+        paid: o.status === 'completed',
+        statusText: o.status === 'completed' ? 'Paid' : 'Pending',
+        paymentMethod: o.paymentMethod || '—'
+    }));
+
+    if (!payments.length) return showNoPayments();
+
+    renderPayments(payments);
+    updateSummary(payments);
+}
+
+// Render table rows
+function renderPayments(list) {
+    const tbody = document.getElementById('paymentBody');
+    if (!list || !list.length) return showNoPayments();
+    document.getElementById('noPayments').style.display = 'none';
+    tbody.innerHTML = list.map(p => `
+        <tr>
+            <td>#${p.id}</td>
+            <td>${formatKES(p.total)}</td>
+            <td>${new Date(p.date).toLocaleString()}</td>
+            <td><span class="status-pill ${p.paid ? 'status-paid' : 'status-pending'}">${p.statusText}</span></td>
+            <td>${p.paymentMethod}</td>
+        </tr>
+    `).join('');
+}
+
+// Update summary cards
+function updateSummary(list) {
+    const totalPayments = list.length;
+    const totalPaid = list.filter(p => p.paid).reduce((sum, p) => sum + Number(p.total),0);
+    const totalPending = list.filter(p => !p.paid).reduce((sum, p) => sum + Number(p.total),0);
+    const last = list.filter(p => p.paid).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+
+    document.getElementById('totalPayments').textContent = totalPayments;
+    document.getElementById('totalPaid').textContent = formatKES(totalPaid);
+    document.getElementById('totalPending').textContent = formatKES(totalPending);
+    document.getElementById('lastPayment').textContent = last ? `${formatKES(last.total)} on ${new Date(last.date).toLocaleString()}` : '—';
+}
+
+// Show placeholder if no payments exist
+function showNoPayments() {
+    document.getElementById('paymentBody').innerHTML = '';
+    document.getElementById('noPayments').style.display = 'block';
+    document.getElementById('totalPayments').textContent = '0';
+    document.getElementById('totalPaid').textContent = 'KES 0';
+    document.getElementById('totalPending').textContent = 'KES 0';
+    document.getElementById('lastPayment').textContent = '—';
+}
+
+// Search and filter
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('statusFilter').addEventListener('change', applyFilters);
+
+function applyFilters() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    let filtered = [...payments];
+
+    if (status === 'paid') filtered = filtered.filter(p => p.paid);
+    else if (status === 'pending') filtered = filtered.filter(p => !p.paid);
+
+    if (query) filtered = filtered.filter(p =>
+        p.id.toString().includes(query) || (p.paymentMethod||'').toLowerCase().includes(query)
+    );
+
+    renderPayments(filtered);
+    updateSummary(filtered);
+}
+
+document.addEventListener('DOMContentLoaded', loadPayments);
+</script>
+</body>
+</html>

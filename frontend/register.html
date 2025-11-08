@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Register Order | Dry Cleaning</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0b1220; color: #dbe7ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+  .card { background: #0f1724; padding: 24px; border-radius: 10px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); width: 100%; max-width: 400px; }
+  h2 { text-align: center; margin-bottom: 16px; }
+  label { display: block; margin: 12px 0 4px; font-weight: 700; }
+  input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; background: #071022; color: #dbe7ff; }
+  button { margin-top: 16px; width: 100%; padding: 10px; border: none; border-radius: 8px; background: linear-gradient(90deg, #3b82f6, #0ea5ff); color: #021224; font-weight: 700; cursor: pointer; }
+  .toast { margin-top: 8px; padding: 10px; border-radius: 8px; background: #081425; text-align: center; font-weight: 700; }
+  .back-btn { margin-top: 12px; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Register Order</h2>
+  <form id="registerForm">
+    <label for="garmentType">Garment Type</label>
+    <input type="text" id="garmentType" name="garmentType" required>
+
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity" name="quantity" min="1" value="1" required>
+
+    <label for="serviceType">Service Type</label>
+    <select id="serviceType" name="serviceType" required>
+      <option value="Standard">Standard</option>
+      <option value="Express">Express</option>
+      <option value="Premium">Premium</option>
+    </select>
+
+    <label for="price">Price (KSH)</label>
+    <input type="number" id="price" name="price" min="0" required>
+
+    <button type="submit">Register Order</button>
+    <button type="button" class="back-btn" onclick="location.href='staff-Dashboard.html'">← Back to Dashboard</button>
+  </form>
+
+  <div id="toastContainer"></div>
+</div>
+
+<script>
+const form = document.getElementById('registerForm');
+const toastContainer = document.getElementById('toastContainer');
+
+function toast(msg, duration = 3000) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  toastContainer.appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
+
+// Auto-generate order number
+function generateOrderNumber() {
+  const timestamp = Date.now().toString().slice(-6); // last 6 digits of timestamp
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `ORD-${timestamp}-${random}`;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  // Disable submit to prevent duplicates
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+
+  const orderData = {
+    orderNumber: generateOrderNumber(),
+    garmentType: form.garmentType.value.trim(),
+    quantity: Number(form.quantity.value),
+    serviceType: form.serviceType.value,
+    price: Number(form.price.value)
+  };
+
+  try {
+    const res = await fetch('http://localhost:5002/api/staff/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+      },
+      body: JSON.stringify(orderData)
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || 'Failed to register order');
+
+    toast(`✅ Order registered! Order No: ${result.order.orderNumber}`);
+    form.reset();
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Error registering order');
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

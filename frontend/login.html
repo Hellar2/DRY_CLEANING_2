@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Login</h2>
+
+    <form id="loginForm">
+      <label for="identifier">Email or Phone</label>
+      <input id="identifier" name="identifier" type="text" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required />
+      <button type="submit">Login</button>
+      <p>Don’t have an account? <a href="signup.html">Register here</a></p>
+      <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
+    </form>
+  </div>
+
+  <!-- ===== Forgot Password Modal ===== -->
+  <div id="forgotModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>Reset Password</h2>
+
+      <label for="resetIdentifier">Email or Phone</label>
+      <input type="text" id="resetIdentifier" placeholder="Enter your email or phone" required />
+
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter new password" required />
+
+      <button id="resetBtn">Reset Password</button>
+    </div>
+  </div>
+
+  <script>
+    // Set backend base URL
+    const API_BASE = 'http://localhost:5002';
+
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const identifier = document.getElementById('identifier').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!identifier || !password) {
+        alert("Please enter both email/phone and password");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password })
+        });
+
+        // Safely parse JSON only if response has JSON content-type
+        const contentType = res.headers.get('content-type') || '';
+        let data = null;
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          // try to parse text as JSON fallback
+          try { data = text ? JSON.parse(text) : null; } catch (e) { data = { message: text || 'Unexpected response' }; }
+        }
+
+         if (!res.ok) {
+          const msg = data?.message || `Login failed (HTTP ${res.status}). Make sure the backend is running on port 5002.`;
+          alert(msg);
+          console.error('Login failed:', { status: res.status, data });
+          return;
+         }
+
+         // Save minimal session info
+         localStorage.setItem('userId', data.userId);
+        localStorage.setItem('role', data.role || '');
+        localStorage.setItem('fullname', data.fullname || '');
+
+        const role = (data.role || '').toLowerCase();
+        if (role === 'admin' || role === 'administrator') {
+          // Use relative paths so files under the `frontend/` folder resolve correctly
+          window.location.href = './admindashboard.html';
+        } else if (role === 'staff') {
+          window.location.href = './staff-Dashboard.html';
+        } else {
+          window.location.href = './cdashboard.html';
+        }
+      } catch (err) {
+        console.error('Login fetch error', err);
+        alert('Network error during login');
+      }
+    });
+
+    // ===== FORGOT PASSWORD MODAL =====
+    const modal = document.getElementById("forgotModal");
+    const openModal = document.getElementById("forgotPasswordLink");
+    const closeModal = document.getElementById("closeModal");
+    const resetBtn = document.getElementById("resetBtn");
+
+    openModal.onclick = (e) => { e.preventDefault(); modal.style.display = "block"; };
+    closeModal.onclick = () => modal.style.display = "none";
+    window.onclick = (event) => { if (event.target === modal) modal.style.display = "none"; };
+
+    // ===== RESET PASSWORD FUNCTION =====
+    resetBtn.addEventListener("click", async () => {
+      const identifier = document.getElementById("resetIdentifier").value.trim();
+      const newPassword = document.getElementById("newPassword").value.trim();
+
+      if (!identifier || !newPassword) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      resetBtn.disabled = true;
+      resetBtn.textContent = "Resetting...";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, newPassword })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert(data.message || "Password reset failed.");
+          return;
+        }
+
+        alert(data.message || "Password reset successful!");
+        modal.style.display = "none";
+        document.getElementById("resetIdentifier").value = "";
+        document.getElementById("newPassword").value = "";
+
+      } catch (err) {
+        console.error("Reset fetch error:", err);
+        alert("Network error or server unreachable.");
+      } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = "Reset Password";
+      }
+    });
+  </script>
+</body>
+</html>

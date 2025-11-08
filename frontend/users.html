@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users</title>
+  <link rel="stylesheet" href="admindashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <h2 class="logo">Admin Panel</h2>
+      <ul class="nav-links">
+        <li><a href="admindashboard.html">Dashboard</a></li>
+        <li><a href="users.html" class="active">Users</a></li>
+        <li><a href="adminOrders.html">Orders</a></li>
+        <li><a href="adminSettings.html">Settings</a></li>
+        <li><a href="#" id="logoutBtn">Logout</a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <header class="header">
+        <h1>Users</h1>
+      </header>
+
+      <section class="table-section">
+        <input type="text" id="userSearch" placeholder="Search users">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const usersTable = document.getElementById('usersTable');
+    const userSearch = document.getElementById('userSearch');
+    let users = [];
+
+    async function fetchUsers() {
+      try {
+        const res = await fetch('http://localhost:5002/api/admin/users');
+        users = await res.json();
+        renderTable(users);
+      } catch(err) { console.error(err); }
+    }
+
+    function renderTable(data) {
+      usersTable.innerHTML = '';
+      if(!data.length) {
+        usersTable.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
+        return;
+      }
+      data.forEach(user => {
+        const row = document.createElement('tr');
+        row.dataset.id = user._id;
+        row.innerHTML = `
+          <td>${user._id}</td>
+          <td>${user.fullname}</td>
+          <td>${user.email}</td>
+          <td>${user.phone}</td>
+          <td>${user.role}</td>
+          <td>
+            <button class="edit">Edit</button>
+            <button class="delete">Delete</button>
+          </td>
+        `;
+        usersTable.appendChild(row);
+      });
+    }
+
+    usersTable.addEventListener('click', async e=>{
+      const row = e.target.closest('tr');
+      if(!row) return;
+      const id = row.dataset.id;
+      if(e.target.classList.contains('delete')) {
+        if(confirm("Delete this user?")) {
+          await fetch(`http://localhost:5002/api/admin/users/${id}`, { method:'DELETE' });
+          fetchUsers();
+        }
+      }
+      if(e.target.classList.contains('edit')) {
+        alert(`Edit user ID: ${id}`);
+      }
+    });
+
+    userSearch.addEventListener('input', e=>{
+      const term = e.target.value.toLowerCase();
+      renderTable(users.filter(u=>u.fullname.toLowerCase().includes(term) || u.email.toLowerCase().includes(term)));
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', e=>{
+      e.preventDefault();
+      window.location.href = 'login.html';
+    });
+
+    fetchUsers();
+  </script>
+</body>
+</html>

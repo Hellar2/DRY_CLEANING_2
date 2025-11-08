@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admindashboard.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2 class="logo">Admin Panel</h2>
+      <ul class="nav-links">
+        <li><a href="admindashboard.html" class="active">Dashboard</a></li>
+        <li><a href="users.html">Users</a></li>
+        <li><a href="adminOrders.html">Orders</a></li>
+        <li><a href="adminSettings.html">Settings</a></li>
+        <li><a href="#" id="logoutBtn">Logout</a></li>
+      </ul>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+      <header class="header">
+        <h1>Dashboard</h1>
+        <div class="user-info">
+          <span>Admin</span>
+          <img src="profile.jpg" alt="Profile" class="profile-pic">
+        </div>
+      </header>
+
+      <section class="stats">
+        <div class="card">
+          <h3>Total Users</h3>
+          <p id="totalUsers">0</p>
+        </div>
+        <div class="card">
+          <h3>Active Orders</h3>
+          <p id="activeOrders">0</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Fetch Dashboard stats
+    async function loadDashboardStats() {
+      try {
+        const res = await fetch('http://localhost:5002/api/admin/dashboard');
+        const stats = await res.json();
+        document.getElementById('totalUsers').textContent = stats.totalUsers;
+        document.getElementById('activeOrders').textContent = stats.activeOrders;
+      } catch(err) {
+        console.error(err);
+      }
+    }
+
+    // Sidebar highlight
+    document.querySelectorAll('.sidebar .nav-links a').forEach(link=>{
+      if(link.href === window.location.href) link.classList.add('active');
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', e=>{
+      e.preventDefault();
+      window.location.href = 'login.html';
+    });
+
+    loadDashboardStats();
+  </script>
+</body>
+</html>

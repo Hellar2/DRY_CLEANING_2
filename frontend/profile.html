@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile - Dry Cleaning Service</title>
+<link rel="stylesheet" href="profile.css">
+<style>
+    .profile-container {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .profile-container h2 {
+        margin-bottom: 1rem;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #3b82f6;
+        color: #fff;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    button:hover {
+        background-color: #2563eb;
+    }
+
+    .success-msg {
+        color: green;
+        margin-bottom: 1rem;
+    }
+
+    .error-msg {
+        color: red;
+        margin-bottom: 1rem;
+    }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+    <nav class="sidebar">
+        <h2 class="logo">DRY CLEANING</h2>
+        <ul class="nav-menu">
+            <li><a href="cdashboard.html">Dashboard</a></li>
+            <li><a href="myOrders.html">My Orders</a></li>
+            <li class="active"><a href="profile.html">Profile</a></li>
+            <li><a href="payment-history.html">Payment History</a></li>
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="profile-container">
+            <h2>My Profile</h2>
+            <div id="msg" class=""></div>
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" placeholder="">
+            </div>
+            <button onclick="updateProfile()">Save Changes</button>
+        </div>
+    </main>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:5002';
+const userId = localStorage.getItem('userId'); // Assuming userId stored after signup/login
+
+if(!userId){
+    alert("You must be logged in.");
+    window.location.href = "login.html";
+}
+
+// Load profile from backend
+async function loadProfile() {
+    try {
+        const res = await fetch(`${API_BASE}/api/customer/${userId}`);
+        if (!res.ok) throw new Error('Failed to fetch profile');
+        const data = await res.json();
+
+        document.getElementById('fullName').value = data.fullName || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+    } catch (err) {
+        console.error(err);
+        showMsg("Failed to load profile.", "error-msg");
+    }
+}
+
+// Update profile in backend
+async function updateProfile() {
+    const fullName = document.getElementById('fullName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+
+    if(!fullName || !email || !phone){
+        showMsg("Please fill in all fields.", "error-msg");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/api/customer/${userId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fullName, email, phone })
+        });
+
+        if(!res.ok) throw new Error('Update failed');
+        showMsg("Profile updated successfully!", "success-msg");
+    } catch (err) {
+        console.error(err);
+        showMsg("Failed to update profile.", "error-msg");
+    }
+}
+
+function showMsg(text, className) {
+    const msgDiv = document.getElementById('msg');
+    msgDiv.textContent = text;
+    msgDiv.className = className;
+    setTimeout(() => { msgDiv.textContent = ""; msgDiv.className = ""; }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>

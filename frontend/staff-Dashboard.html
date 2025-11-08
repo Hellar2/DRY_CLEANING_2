@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Dashboard | Dry Cleaning</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#0f1724; --muted:#9aa4b2; --accent:#0ea5ff; --accent-2:#3b82f6;
+  --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444; --radius:10px; --shadow: 0 8px 30px rgba(2,6,23,0.6);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,var(--bg),#071022);color:#dbe7ff;min-height:100vh}
+.wrap{max-width:1100px;margin:28px auto;padding:16px;display:grid;grid-template-columns:220px 1fr;gap:18px}
+/* sidebar */
+.sidebar{background:var(--panel);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);height:calc(100vh - 56px);position:sticky;top:28px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.mark{width:44px;height:44;border-radius:8px;background:linear-gradient(135deg,var(--accent-2),var(--accent));display:flex;align-items:center;justify-content:center;font-weight:800}
+nav{display:flex;flex-direction:column;gap:8px}
+.nav-item{padding:10px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:700}
+.nav-item.active{background:#071634;color:var(--accent);}
+.profile{margin-top:auto;display:flex;gap:10px;align-items:center;padding-top:12px;border-top:1px solid rgba(255,255,255,0.03)}
+.avatar{width:40px;height:40;border-radius:8px;background:#061126;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:800}
+/* main */
+.main{display:flex;flex-direction:column;gap:14px}
+header{display:flex;justify-content:space-between;align-items:center}
+.card{background:linear-gradient(180deg,#0b1320,#081022);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+.summary{display:flex;gap:12px;flex-wrap:wrap}
+.stat{flex:1;min-width:120px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.02);font-weight:700;color:#e6f3ff}
+table{width:100%;border-collapse:collapse;margin-top:12px;color:#dbe7ff}
+thead th{background:transparent;color:#cfe7ff;padding:10px;text-align:left;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.03)}
+td,th{padding:10px;border-bottom:1px solid rgba(255,255,255,0.02);vertical-align:middle}
+tbody tr:hover{background:rgba(255,255,255,0.01)}
+.status{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;font-size:13px}
+.qr{width:56px;height:56;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,0.03);background:#02101a}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#021224;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:800}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.02)}
+.toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{background:#081425;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);font-weight:700}
+select{padding:6px 8px;border-radius:6px;border:1px solid var(--accent-2);background:#071022;color:#dbe7ff;font-weight:700}
+@media(max-width:980px){.wrap{grid-template-columns:1fr}.sidebar{order:2;height:auto;position:relative}}
+</style>
+</head>
+<body>
+<div class="wrap" role="application" aria-label="Staff dashboard">
+  <aside class="sidebar" aria-label="Sidebar">
+    <div class="brand">
+      <div class="mark">DC</div>
+      <div>
+        <div style="font-weight:800">DryClean</div>
+        <div class="muted" style="font-size:12px">Staff</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-item active" data-section="dashboard">🏠 Dashboard</div>
+      <div class="nav-item" data-section="register" onclick="location='register.html'">➕ Register Garment</div>
+      <div class="nav-item" data-section="update" onclick="location='update.html'">🔄 Update Status</div>
+      <div class="nav-item" data-section="logout" onclick="logout()">🚪 Logout</div>
+    </nav>
+    <div class="profile">
+      <div class="avatar" id="avatarInitial">S</div>
+      <div style="font-size:13px">
+        <div style="font-weight:800" id="staffName">Staff</div>
+        <div class="muted" style="font-size:12px" id="staffEmail">—</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header>
+      <div style="font-weight:900;color:var(--accent)">Staff Dashboard</div>
+      <div class="controls">
+        <button class="btn ghost" id="refreshBtn">Refresh</button>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="ordersTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="ordersTitle" style="font-weight:900">📦 Orders</div>
+        <div class="muted" id="autoInfo">Auto-refresh every 10s</div>
+      </div>
+
+      <div class="summary" style="margin-top:12px">
+        <div class="stat">Total: <span id="total">0</span></div>
+        <div class="stat">Received: <span id="received">0</span></div>
+        <div class="stat">In Progress: <span id="inProgress">0</span></div>
+        <div class="stat">Completed: <span id="completed">0</span></div>
+        <div class="stat">Ready: <span id="ready">0</span></div>
+      </div>
+
+      <div style="margin-top:12px;overflow:auto">
+        <table aria-live="polite" aria-busy="false">
+          <thead>
+            <tr>
+              <th>Order No.</th>
+              <th>Customer</th>
+              <th>Garment</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Update</th>
+              <th>QR</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+const API_BASE = "http://localhost:5002/api/staff";
+const ordersBody = document.getElementById("ordersBody");
+const totalEl = document.getElementById("total");
+const receivedEl = document.getElementById("received");
+const inProgressEl = document.getElementById("inProgress");
+const completedEl = document.getElementById("completed");
+const readyEl = document.getElementById("ready");
+const toasts = document.getElementById("toasts");
+const refreshBtn = document.getElementById("refreshBtn");
+
+function toast(msg, t=3000){
+  const d=document.createElement("div");d.className="toast";d.textContent=msg;toasts.appendChild(d);
+  setTimeout(()=>{d.style.opacity=0; setTimeout(()=>d.remove(),250)},t);
+}
+
+const user = JSON.parse(localStorage.getItem("staffUser")||"{}");
+if(user.name) document.getElementById("staffName").textContent=user.name;
+if(user.email) document.getElementById("staffEmail").textContent=user.email;
+if(user.name) document.getElementById("avatarInitial").textContent=user.name.charAt(0).toUpperCase();
+
+let orders = [];
+
+async function loadSummary(){
+  try{
+    const res = await fetch(`${API_BASE}/summary`, { headers:{'Authorization':`Bearer ${localStorage.getItem('authToken')||''}`}});
+    if(!res.ok) throw new Error("summary failed");
+    const s = await res.json();
+    totalEl.textContent = s.total ?? 0;
+    receivedEl.textContent = s.received ?? 0;
+    inProgressEl.textContent = s.inProgress ?? 0;
+    completedEl.textContent = s.completed ?? 0;
+    readyEl.textContent = s.ready ?? 0;
+  }catch(err){console.error(err);}
+}
+
+async function loadOrders(){
+  try{
+    const res = await fetch(`${API_BASE}/orders`, { headers:{'Authorization':`Bearer ${localStorage.getItem('authToken')||''}`}});
+    if(!res.ok) throw new Error("orders failed");
+    const data = await res.json();
+    orders = Array.isArray(data)? data : [];
+    renderOrders();
+  }catch(err){console.error(err); ordersBody.innerHTML="";}
+}
+
+function renderOrders(){
+  ordersBody.innerHTML = "";
+  if(orders.length===0){ordersBody.innerHTML='<tr><td colspan="8">No orders yet</td></tr>'; return;}
+  orders.forEach(o=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${o.orderNumber}</td>
+      <td>${o.customerId?.fullname||o.customerId?.email||"N/A"}</td>
+      <td>${o.garmentType||"—"}</td>
+      <td>${o.quantity||1}</td>
+      <td>
+        <select data-id="${o._id}" class="statusSelect">
+          <option ${o.status==='Received'?'selected':''}>Received</option>
+          <option ${o.status==='In Progress'?'selected':''}>In Progress</option>
+          <option ${o.status==='Completed'?'selected':''}>Completed</option>
+          <option ${o.status==='Ready for Pickup'?'selected':''}>Ready for Pickup</option>
+        </select>
+      </td>
+      <td>
+        <select data-id="${o._id}" class="paymentSelect">
+          <option ${o.paymentStatus==='Pending'?'selected':''}>Pending</option>
+          <option ${o.paymentStatus==='Paid'?'selected':''}>Paid</option>
+        </select>
+      </td>
+      <td><button class="btn" data-id="${o._id}">Update</button></td>
+      <td style="text-align:center"><img class="qr" src="${o.qrCode||''}" alt="QR" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22160%22 height=%22160%22><rect width=100% height=100 fill=%22%23060f18%22/><text x=50%25 y=50%25 dominant-baseline=middle text-anchor=middle fill=%229aa4b2%22 font-size=14>No QR</text></svg>'"></td>
+    `;
+    ordersBody.appendChild(tr);
+  });
+
+  // Add update button listeners
+  document.querySelectorAll("button[data-id]").forEach(btn=>{
+    btn.addEventListener("click", async ()=>{
+      const id = btn.getAttribute("data-id");
+      const status = document.querySelector(`.statusSelect[data-id='${id}']`).value;
+      const paymentStatus = document.querySelector(`.paymentSelect[data-id='${id}']`).value;
+      try{
+        const res = await fetch(`${API_BASE}/orders/${id}`, {
+          method:"PUT",
+          headers: {
+            "Content-Type":"application/json",
+            "Authorization": `Bearer ${localStorage.getItem('authToken')||''}`
+          },
+          body: JSON.stringify({ status, paymentStatus })
+        });
+        const data = await res.json();
+        toast(data.message || "Order updated!",2000);
+        loadSummary();
+        loadOrders();
+      }catch(err){console.error(err);}
+    });
+  });
+}
+
+refreshBtn.addEventListener("click", async ()=>{await loadSummary(); await loadOrders(); toast("Refreshed",1200);});
+
+let intervalId;
+function startAutoRefresh(){
+  if(intervalId) clearInterval(intervalId);
+  intervalId=setInterval(()=>{loadSummary(); loadOrders();},10000);
+}
+
+function logout(){
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("staffUser");
+  toast("Logged out",1200);
+  setTimeout(()=>location.href="login.html",800);
+}
+window.logout = logout;
+
+(async function init(){
+  await loadSummary();
+  await loadOrders();
+  startAutoRefresh();
+})();
+</script>
+</body>
+</html>

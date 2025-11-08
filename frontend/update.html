@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Garment Status | Dry Cleaning</title>
+<style>
+body { font-family: Inter,system-ui; background:#0b1220; color:#dbe7ff; margin:0; }
+header { background:#3b82f6; color:#021224; padding:15px; text-align:center; font-size:22px; font-weight:bold; }
+.container { width:90%; max-width:1000px; margin:20px auto; background:#0f1724; padding:20px; border-radius:10px; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th, td { border:1px solid #3b82f6; padding:10px; text-align:center; }
+th { background:#0ea5ff; color:#021224; font-weight:bold; }
+tbody tr:hover { background:#081022; }
+select, button { padding:6px 10px; border-radius:6px; border:1px solid #3b82f6; background:#071022; color:#dbe7ff; cursor:pointer; font-weight:700; }
+button { background:#3b82f6; margin-top:4px; }
+.back-link { color:#0ea5ff; text-decoration:none; display:inline-block; margin-bottom:10px; }
+.back-link:hover { text-decoration:underline; }
+.message { text-align:center; margin-top:10px; font-weight:bold; color:#16a34a; }
+</style>
+</head>
+<body>
+
+<header>🔄 Update Garment Status</header>
+
+<div class="container">
+    <a href="staff-Dashboard.html" class="back-link">← Back to Dashboard</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Order No.</th>
+                <th>Customer</th>
+                <th>Garment</th>
+                <th>Qty</th>
+                <th>Status</th>
+                <th>Payment</th>
+                <th>Update</th>
+            </tr>
+        </thead>
+        <tbody id="ordersTable">
+            <tr><td colspan="7">Loading orders...</td></tr>
+        </tbody>
+    </table>
+
+    <p class="message" id="message"></p>
+</div>
+
+<script>
+const API = "http://localhost:5002/api/staff";
+let orders = [];
+
+// Toast helper
+function toast(msg) {
+    const messageEl = document.getElementById("message");
+    messageEl.textContent = msg;
+    setTimeout(() => messageEl.textContent = "", 2500);
+}
+
+// Fetch orders from backend
+async function fetchOrders() {
+    try {
+        const res = await fetch(`${API}/orders`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem('authToken') || ''}` }
+        });
+        const data = await res.json();
+        orders = Array.isArray(data) ? data : [];
+        renderOrders();
+    } catch(err) {
+        console.error(err);
+        document.getElementById("ordersTable").innerHTML = `<tr><td colspan="7">Error fetching orders</td></tr>`;
+    }
+}
+
+// Render orders table
+function renderOrders() {
+    const tbody = document.getElementById("ordersTable");
+    tbody.innerHTML = "";
+    if(orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7">No orders found</td></tr>`;
+        return;
+    }
+
+    orders.forEach(order => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${order.orderNumber}</td>
+            <td>${order.customerId?.fullname || order.customerId?.email || "N/A"}</td>
+            <td>${order.garmentType || "—"}</td>
+            <td>${order.quantity || 1}</td>
+            <td>
+                <select data-id="${order._id}" class="statusSelect">
+                    <option ${order.status==='Received'?'selected':''}>Received</option>
+                    <option ${order.status==='In Progress'?'selected':''}>In Progress</option>
+                    <option ${order.status==='Completed'?'selected':''}>Completed</option>
+                    <option ${order.status==='Ready for Pickup'?'selected':''}>Ready for Pickup</option>
+                </select>
+            </td>
+            <td>
+                <select data-id="${order._id}" class="paymentSelect">
+                    <option ${order.paymentStatus==='Pending'?'selected':''}>Pending</option>
+                    <option ${order.paymentStatus==='Paid'?'selected':''}>Paid</option>
+                </select>
+            </td>
+            <td><button data-id="${order._id}">Update</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            const status = document.querySelector(`.statusSelect[data-id='${id}']`).value;
+            const paymentStatus = document.querySelector(`.paymentSelect[data-id='${id}']`).value;
+
+            try {
+                const res = await fetch(`${API}/orders/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type":"application/json",
+                        "Authorization": `Bearer ${localStorage.getItem('authToken') || ''}`
+                    },
+                    body: JSON.stringify({ status, paymentStatus })
+                });
+                const data = await res.json();
+                toast(data.message || "Order updated successfully!");
+                fetchOrders();
+            } catch(err) {
+                console.error(err);
+                toast("Error updating order");
+            }
+        });
+    });
+}
+
+// Initialize
+fetchOrders();
+</script>
+
+</body>
+</html>

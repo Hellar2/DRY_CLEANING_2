@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Orders - Dry Cleaning Service</title>
+<link rel="stylesheet" href="profile.css">
+<style>
+    /* Sidebar + main content */
+    .dashboard-container { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:#0b1220; color:#dbe7ff; padding:20px; flex-shrink:0; }
+    .sidebar .logo { font-size:20px; font-weight:bold; margin-bottom:20px; }
+    .nav-menu { list-style:none; padding:0; margin:0; }
+    .nav-menu li { margin-bottom:15px; }
+    .nav-menu li a { color:#dbe7ff; text-decoration:none; display:block; }
+    .nav-menu li.active a { font-weight:bold; color:#3b82f6; }
+    .main-content { flex:1; padding:20px; background:#f4f4f4; }
+
+    /* Header */
+    .content-header h1 { margin:0 0 5px; }
+    .content-header p { margin:0 0 20px; color:#555; }
+
+    /* Summary cards */
+    .orders-summary { display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap; }
+    .summary-card { flex:1; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .summary-card h3 { margin:0 0 10px; }
+    .summary-number { font-size:1.5em; font-weight:bold; color:#3b82f6; }
+
+    /* Filters */
+    .orders-filter-section { display:flex; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+    .filter-tabs { display:flex; gap:10px; }
+    .filter-tab { padding:8px 15px; border:none; border-radius:5px; background:#e5e7eb; cursor:pointer; }
+    .filter-tab.active { background:#3b82f6; color:#fff; }
+    .search-box { display:flex; gap:5px; }
+    .search-box input { padding:8px; border-radius:5px; border:1px solid #ccc; }
+    .search-btn { padding:8px 12px; border:none; border-radius:5px; background:#3b82f6; color:#fff; cursor:pointer; }
+
+    /* Orders list */
+    .orders-list-container { margin-top:20px; }
+    .orders-list-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .sort-options select { padding:5px 10px; border-radius:5px; border:1px solid #ccc; }
+
+    .order-card { background:#fff; border-radius:8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .order-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .order-info h3 { margin:0; font-size:1.1em; }
+    .order-info p { margin:2px 0 0; font-size:0.85em; color:#555; }
+    .order-pricing { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .order-total { font-weight:bold; }
+    .order-status { padding:5px 10px; border-radius:5px; color:#fff; font-weight:bold; font-size:0.85em; }
+
+    /* Status colors */
+    .status-received { background:#f59e0b; }
+    .status-processing { background:#3b82f6; }
+    .status-ready { background:#10b981; }
+    .status-completed { background:#6b7280; }
+
+    .order-actions { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
+    .action-btn { padding:6px 12px; border:none; border-radius:5px; cursor:pointer; font-size:0.85em; }
+    .pickup-btn { background:#10b981; color:#fff; }
+    .payment-btn { background:#f97316; color:#fff; }
+    .details-btn { background:#3b82f6; color:#fff; }
+
+    /* Expandable details */
+    .order-details { margin-top:10px; padding:10px; background:#f9fafb; border-radius:5px; display:none; }
+    .order-details.active { display:block; }
+
+    .no-orders { text-align:center; color:#555; padding:20px; background:#fff; border-radius:8px; }
+
+    @media(max-width:768px){
+        .orders-summary { flex-direction:column; }
+        .orders-filter-section { flex-direction:column; gap:10px; }
+        .order-header { flex-direction:column; align-items:flex-start; }
+        .order-pricing { flex-direction:column; align-items:flex-start; }
+    }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+    <nav class="sidebar">
+        <h2 class="logo">DRY CLEANING</h2>
+        <ul class="nav-menu">
+            <li><a href="cdashboard.html">Dashboard</a></li>
+            <li class="active"><a href="myOrders.html">My Orders</a></li>
+            <li><a href="profile.html">Profile</a></li>
+            <li><a href="payment-history.html">Payment History</a></li>
+            <li><a href="settings.html">Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="content-header">
+            <h1>My Orders</h1>
+            <p>View and manage your dry cleaning orders</p>
+        </header>
+
+        <div class="orders-summary">
+            <div class="summary-card">
+                <h3>Active Orders</h3>
+                <p class="summary-number" id="activeOrders">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Ready for Pickup</h3>
+                <p class="summary-number" id="readyOrdersCount">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Total Completed</h3>
+                <p class="summary-number" id="completedOrders">0</p>
+            </div>
+            <div class="summary-card">
+                <h3>Total Spent</h3>
+                <p class="summary-number" id="totalSpent">KES 0</p>
+            </div>
+        </div>
+
+        <div class="orders-filter-section">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-status="all">All Orders</button>
+                <button class="filter-tab" data-status="received">Current</button>
+                <button class="filter-tab" data-status="ready">Ready for Pickup</button>
+                <button class="filter-tab" data-status="completed">Completed</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="orderSearch" placeholder="Search orders...">
+                <button class="search-btn">Search</button>
+            </div>
+        </div>
+
+        <div class="orders-list-container">
+            <div class="orders-list-header">
+                <h2>Order History</h2>
+                <div class="sort-options">
+                    <select id="sortOrders">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="status">By Status</option>
+                        <option value="price">By Price</option>
+                    </select>
+                </div>
+            </div>
+            <div class="orders-list" id="ordersList">
+                <div class="no-orders"><p>No orders yet.</p></div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:5002';
+const statusConfig = {
+    'received': { text: 'Received', class: 'status-received' },
+    'processing': { text: 'In Progress', class: 'status-processing' },
+    'ready': { text: 'Ready for Pickup', class: 'status-ready' },
+    'completed': { text: 'Completed', class: 'status-completed' }
+};
+
+let ordersData = { orderQueue: [], stats: { currentOrders:0, readyOrders:0, completedOrders:0, totalRevenue:0 } };
+
+function formatCurrency(amount){ return `KES ${amount.toLocaleString('en-KE')}`; }
+
+function initializeOrdersPage(){
+    loadOrdersData();
+    setupEventListeners();
+    updateOrdersSummary();
+    displayOrders();
+    startLiveSync();
+}
+
+function loadOrdersData(){
+    const saved = localStorage.getItem('dashboardData');
+    if(saved) ordersData = JSON.parse(saved);
+}
+
+function setupEventListeners(){
+    document.querySelectorAll('.filter-tab').forEach(tab=>{
+        tab.addEventListener('click', function(){
+            document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+            this.classList.add('active');
+            filterOrders(this.getAttribute('data-status'));
+        });
+    });
+    document.querySelector('.search-btn').addEventListener('click', ()=>searchOrders(document.getElementById('orderSearch').value));
+    document.getElementById('orderSearch').addEventListener('input', e=>searchOrders(e.target.value));
+    document.getElementById('sortOrders').addEventListener('change', e=>sortOrders(e.target.value));
+}
+
+function updateOrdersSummary(){
+    const stats = ordersData.stats;
+    document.getElementById('activeOrders').textContent = stats.currentOrders || 0;
+    document.getElementById('readyOrdersCount').textContent = stats.readyOrders || 0;
+    document.getElementById('completedOrders').textContent = stats.completedOrders || 0;
+    const totalSpent = ordersData.orderQueue.filter(o=>o.status==='completed' && !o.paid).reduce((sum,o)=>sum+(o.total||0),0);
+    document.getElementById('totalSpent').textContent = formatCurrency(totalSpent);
+}
+
+function displayOrders(ordersToDisplay=null){
+    const ordersList = document.getElementById('ordersList');
+    const orders = ordersToDisplay || ordersData.orderQueue || [];
+    if(!orders.length){ ordersList.innerHTML='<div class="no-orders"><p>No orders yet.</p></div>'; return; }
+    const sorted = [...orders].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    ordersList.innerHTML = sorted.map(o=>createOrderCard(o)).join('');
+}
+
+function createOrderCard(order){
+    const status = statusConfig[order.status] || statusConfig.received;
+    const orderDate = new Date(order.timestamp).toLocaleDateString();
+    const orderTotal = order.total ? formatCurrency(order.total) : 'KES 0';
+    return `
+    <div class="order-card" data-order-id="${order.id}">
+        <div class="order-header">
+            <div class="order-info">
+                <h3>Order #${order.id}</h3>
+                <p>Placed on ${orderDate}</p>
+            </div>
+            <div class="order-pricing">
+                <span class="order-total">${orderTotal}</span>
+                <span class="order-status ${status.class}">${status.text}</span>
+            </div>
+        </div>
+        <div class="order-actions">
+            ${order.status==='ready'?`<button class="action-btn pickup-btn" onclick="simulatePickup(${order.id})">Mark as Picked Up</button>`:''}
+            ${order.status==='completed' && !order.paid?`<button class="action-btn payment-btn" onclick="makePayment(${order.id})">Pay Now</button>`:''}
+            <button class="action-btn details-btn" onclick="toggleOrderDetails(${order.id})">View Details</button>
+        </div>
+        <div class="order-details" id="details-${order.id}">
+            <strong>Items:</strong><br>
+            ${order.items.map(i=>`${i.quantity} x ${i.type}`).join('<br>')}<br>
+            <strong>Timestamp:</strong> ${new Date(order.timestamp).toLocaleString()}<br>
+            <strong>Total:</strong> ${orderTotal}
+        </div>
+    </div>`;
+}
+
+function filterOrders(status){
+    if(status==='all') return displayOrders();
+    displayOrders(ordersData.orderQueue.filter(o=>o.status===status));
+}
+
+function searchOrders(query){
+    if(!query.trim()) return displayOrders();
+    const filtered = ordersData.orderQueue.filter(o=>o.id.toString().includes(query) || 
+        (o.items && o.items.some(i=>i.type.toLowerCase().includes(query.toLowerCase()))));
+    displayOrders(filtered);
+}
+
+function sortOrders(sortBy){
+    const orders = [...ordersData.orderQueue];
+    switch(sortBy){
+        case 'newest': orders.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)); break;
+        case 'oldest': orders.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)); break;
+        case 'status': orders.sort((a,b)=>a.status.localeCompare(b.status)); break;
+        case 'price': orders.sort((a,b)=>(b.total||0)-(a.total||0)); break;
+    }
+    displayOrders(orders);
+}
+
+function simulatePickup(orderId){
+    const idx = ordersData.orderQueue.findIndex(o=>o.id===orderId);
+    if(idx!==-1){
+        ordersData.orderQueue[idx].status='completed';
+        ordersData.orderQueue[idx].paid = false;
+        ordersData.stats.readyOrders--;
+        ordersData.stats.completedOrders++;
+        localStorage.setItem('dashboardData', JSON.stringify(ordersData));
+        updateOrdersSummary(); displayOrders();
+        alert(`Order #${orderId} marked as picked up!`);
+    }
+}
+
+async function makePayment(orderId){
+    const order = ordersData.orderQueue.find(o=>o.id===orderId);
+    if(!order) return alert('Order not found!');
+    const amount = order.total || 0;
+    try{
+        const res = await fetch(`${API_BASE}/api/payment`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ orderId:order.id, amount, method:'m-pesa' })
+        });
+        const data = await res.json();
+        if(res.ok){
+            order.paid = true;
+            localStorage.setItem('dashboardData', JSON.stringify(ordersData));
+            updateOrdersSummary();
+            displayOrders();
+            alert(`✅ Payment recorded!\nOrder #${orderId}\nAmount: ${formatCurrency(amount)}`);
+        }else alert(`⚠️ Payment failed: ${data.message}`);
+    }catch(err){ alert("⚠️ Network error — payment failed."); }
+}
+
+function toggleOrderDetails(orderId){
+    const details = document.getElementById(`details-${orderId}`);
+    details.classList.toggle('active');
+}
+
+function startLiveSync(){
+    setInterval(()=>{
+        const latestData = localStorage.getItem('dashboardData');
+        if(latestData){
+            const parsed = JSON.parse(latestData);
+            if(JSON.stringify(parsed.orderQueue) !== JSON.stringify(ordersData.orderQueue)){
+                ordersData = parsed;
+                updateOrdersSummary();
+                displayOrders();
+            }
+        }
+    },2000);
+}
+
+document.addEventListener('DOMContentLoaded', initializeOrdersPage);
+</script>
+</body>
+</html>

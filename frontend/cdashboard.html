@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Dry Cleaning</title>
+    <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <h2 class="logo">DRY CLEANING</h2>
+            <ul class="nav-menu">
+                <li class="active"><a href="cdashboard.html">Dashboard</a></li>
+                <li><a href="myOrders.html">My Orders</a></li>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="payment-history.html">Payment History</a></li>
+                <li><a href="settings.html">Settings</a></li>
+                <li><a href="login.html" id="logoutBtn">Logout</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Customer Dashboard</h1>
+            </header>
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <h3>Your QR Code</h3>
+                <div id="qrcode"></div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h3>Current Orders</h3>
+                        <p class="stat-number" id="currentOrders">0</p>
+                        <p class="stat-desc">In progress</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h3>Ready for Pickup</h3>
+                        <p class="stat-number" id="readyOrders">0</p>
+                        <p class="stat-desc">Waiting for you</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h3>Total Orders</h3>
+                        <p class="stat-number" id="totalOrders">0</p>
+                        <p class="stat-desc">All time</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <h3>Total Revenue</h3>
+                        <p class="stat-number" id="totalRevenue">KES 0</p>
+                        <p class="stat-desc">Completed orders</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Creation Form -->
+            <div class="order-creation-section">
+                <h2>Create New Order</h2>
+                <div class="order-form">
+                    <div class="form-group">
+                        <label>Select Items and Quantities:</label>
+                        <div class="items-selection">
+                            <!-- Shirt -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="shirt" value="shirt" data-price="150" onchange="toggleQuantity('shirt')">
+                                    <label for="shirt">Shirt/Blouse</label>
+                                    <span class="item-price">KES 150</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="shirt-qty" min="1" max="10" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                            <!-- Pants -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="pants" value="pants" data-price="200" onchange="toggleQuantity('pants')">
+                                    <label for="pants">Pants/Trousers</label>
+                                    <span class="item-price">KES 200</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="pants-qty" min="1" max="10" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                            <!-- Jacket -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="jacket" value="jacket" data-price="350" onchange="toggleQuantity('jacket')">
+                                    <label for="jacket">Jacket/Blazer</label>
+                                    <span class="item-price">KES 350</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="jacket-qty" min="1" max="10" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                            <!-- Dress -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="dress" value="dress" data-price="400" onchange="toggleQuantity('dress')">
+                                    <label for="dress">Dress</label>
+                                    <span class="item-price">KES 400</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="dress-qty" min="1" max="10" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                            <!-- Suit -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="suit" value="suit" data-price="600" onchange="toggleQuantity('suit')">
+                                    <label for="suit">Suit</label>
+                                    <span class="item-price">KES 600</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="suit-qty" min="1" max="10" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                            <!-- Blanket -->
+                            <div class="item-option">
+                                <div class="item-info">
+                                    <input type="checkbox" id="blanket" value="blanket" data-price="500" onchange="toggleQuantity('blanket')">
+                                    <label for="blanket">Blanket/Bedding</label>
+                                    <span class="item-price">KES 500</span>
+                                </div>
+                                <input type="number" class="item-quantity" id="blanket-qty" min="1" max="5" value="1" disabled onchange="updateOrderTotal()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="order-summary">
+                        <div class="order-total-display">
+                            <strong>Total: <span id="orderTotalAmount">KES 0</span></strong>
+                        </div>
+                        <button class="auto-btn" onclick="createCustomOrder()">Create Order</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process Automation Status (Customer View Only) -->
+            <div class="automation-section">
+                <h2>Order Status</h2>
+                <div class="process-status">
+                    <div class="process-step"><span class="step-number">1</span><span class="step-text">New Order Received</span></div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step"><span class="step-number">2</span><span class="step-text">In Cleaning Process</span></div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step"><span class="step-number">3</span><span class="step-text">Ready for Pickup</span></div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step"><span class="step-number">4</span><span class="step-text">Order Completed</span></div>
+                </div>
+            </div>
+
+            <!-- Pricing Information -->
+            <div class="pricing-info">
+                <h3>Our Prices (KES)</h3>
+                <div class="price-list">
+                    <div class="price-item">Shirt: 150</div>
+                    <div class="price-item">Pants: 200</div>
+                    <div class="price-item">Jacket: 350</div>
+                    <div class="price-item">Dress: 400</div>
+                    <div class="price-item">Suit: 600</div>
+                    <div class="price-item">Blanket: 500</div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h2>Recent Activity</h2>
+                <div class="activity-list" id="activityList"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- QRCode Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script>
+        const API_BASE = 'http://localhost:5002';
+        const kenyanPricing = {shirt:150, pants:200, jacket:350, dress:400, suit:600, blanket:500};
+
+        const dashboardData = {
+            userName: "John",
+            stats:{currentOrders:0, readyOrders:0, totalOrders:0, completedOrders:0, totalRevenue:0},
+            orderQueue:[],
+            activities:["System ready - No orders yet"],
+            nextOrderId:1001
+        };
+
+        function formatCurrency(amount){ 
+            return `KES ${amount.toLocaleString('en-KE')}`; 
+        }
+
+        function initializeDashboard(){
+            const saved = localStorage.getItem('dashboardData');
+            if(saved) Object.assign(dashboardData, JSON.parse(saved));
+            updateDashboard();
+            updateOrderTotal();
+            generateQRCode();
+
+            // Automatically progress orders every 5 seconds
+            setInterval(progressOrders, 5000);
+        }
+
+        function updateDashboard(){
+            document.getElementById('currentOrders').textContent = dashboardData.stats.currentOrders;
+            document.getElementById('readyOrders').textContent = dashboardData.stats.readyOrders;
+            document.getElementById('totalOrders').textContent = dashboardData.stats.totalOrders;
+            document.getElementById('totalRevenue').textContent = formatCurrency(dashboardData.stats.totalRevenue||0);
+
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = '';
+            dashboardData.activities.forEach(a=>{
+                const item = document.createElement('div');
+                item.className='activity-item';
+                item.innerHTML = `<div class="activity-dot"></div>
+                                  <div class="activity-content">
+                                    <p class="activity-title">${a.text||a}</p>
+                                    <span class="activity-date">${a.timestamp||new Date().toLocaleTimeString()}</span>
+                                  </div>`;
+                activityList.appendChild(item);
+            });
+
+            localStorage.setItem('dashboardData', JSON.stringify(dashboardData));
+        }
+
+        function addActivity(msg){
+            const activity = {text: msg, timestamp: new Date().toLocaleString()};
+            dashboardData.activities.unshift(activity);
+            if(dashboardData.activities.length>10) dashboardData.activities=dashboardData.activities.slice(0,10);
+        }
+
+        function toggleQuantity(itemType){
+            const checkbox = document.getElementById(itemType);
+            const quantityInput = document.getElementById(itemType+'-qty');
+            const option = checkbox.closest('.item-option');
+            if(checkbox.checked){ 
+                quantityInput.disabled=false; 
+                option.classList.add('checked'); 
+            }
+            else { 
+                quantityInput.disabled=true; 
+                quantityInput.value="1"; 
+                option.classList.remove('checked'); 
+            }
+            updateOrderTotal();
+        }
+
+        function updateOrderTotal(){
+            let total=0;
+            document.querySelectorAll('.item-option').forEach(option=>{
+                const checkbox=option.querySelector('input[type="checkbox"]');
+                const quantity=parseInt(option.querySelector('.item-quantity').value)||0;
+                if(checkbox.checked&&quantity>0) total+=parseInt(checkbox.dataset.price)*quantity;
+            });
+            document.getElementById('orderTotalAmount').textContent=formatCurrency(total);
+            return total;
+        }
+
+        function getItemDisplayName(itemType){
+            const names={shirt:'Shirt/Blouse',pants:'Pants/Trousers',jacket:'Jacket/Blazer',dress:'Dress',suit:'Suit',blanket:'Blanket/Bedding'};
+            return names[itemType]||itemType;
+        }
+
+        function createCustomOrder(){
+            const selectedItems=[];
+            let hasItems=false;
+            document.querySelectorAll('.item-option').forEach(option=>{
+                const checkbox=option.querySelector('input[type="checkbox"]');
+                const quantity=parseInt(option.querySelector('.item-quantity').value)||0;
+                if(checkbox.checked && quantity>0){ 
+                    selectedItems.push({type: checkbox.value, quantity}); 
+                    hasItems=true; 
+                }
+            });
+            if(!hasItems){ 
+                alert('Please select at least one item for your order!'); 
+                return; 
+            }
+
+            const total=selectedItems.reduce((sum,i)=>sum+kenyanPricing[i.type]*i.quantity,0);
+            const orderId = dashboardData.nextOrderId++;
+            const order = {id:orderId,status:'received',timestamp:new Date(),items:selectedItems,total};
+            dashboardData.orderQueue.push(order);
+            dashboardData.stats.currentOrders++; 
+            dashboardData.stats.totalOrders++;
+
+            const itemsDesc=selectedItems.map(i=>`${i.quantity}x ${getItemDisplayName(i.type)}`).join(', ');
+            addActivity(`New order #${orderId} created - ${itemsDesc} - ${formatCurrency(total)}`);
+
+            resetOrderForm(); 
+            updateDashboard();
+            alert(`Order #${orderId} created!\nItems: ${itemsDesc}\nTotal: ${formatCurrency(total)}`);
+        }
+
+        function resetOrderForm(){
+            document.querySelectorAll('.item-option').forEach(option=>{
+                const checkbox=option.querySelector('input[type="checkbox"]');
+                const qty=option.querySelector('.item-quantity');
+                checkbox.checked=false; qty.disabled=true; qty.value="1"; option.classList.remove('checked');
+            });
+            updateOrderTotal();
+        }
+
+        function progressOrders(){
+            dashboardData.orderQueue.forEach(order=>{
+                if(order.status==='received'){
+                    order.status='in-progress';
+                    addActivity(`Order #${order.id} is now in cleaning process`);
+                }
+                else if(order.status==='in-progress'){
+                    order.status='ready';
+                    dashboardData.stats.currentOrders--;
+                    dashboardData.stats.readyOrders++;
+                    addActivity(`Order #${order.id} is ready for pickup`);
+                }
+                else if(order.status==='ready'){
+                    order.status='completed';
+                    dashboardData.stats.readyOrders--;
+                    dashboardData.stats.completedOrders++;
+                    dashboardData.stats.totalRevenue+=order.total;
+                    addActivity(`Order #${order.id} completed - ${formatCurrency(order.total)} paid`);
+                }
+            });
+            updateDashboard();
+        }
+
+        function generateQRCode(){
+            const qrContainer=document.getElementById('qrcode');
+            qrContainer.innerHTML='';
+            const qrText=`${API_BASE}/customer/${dashboardData.userName}/orders`;
+            new QRCode(qrContainer,{text:qrText,width:150,height:150,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.H});
+        }
+
+        document.addEventListener('DOMContentLoaded',initializeDashboard);
+        document.getElementById('logoutBtn').addEventListener('click',()=>{
+            localStorage.removeItem('dashboardData');
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Track Your Order</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="tracking-container">
+    <h2>🧺 Dry Cleaning Order Tracker</h2>
+    <p id="trackingId"></p>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    // Example: http://localhost:5002/track/ORD-20251106-12345
+    const urlParts = window.location.pathname.split('/');
+    const trackingCode = urlParts[urlParts.length - 1];
+    document.getElementById('trackingId').textContent = "Tracking Code: " + trackingCode;
+
+    // Simulate a database lookup (for now)
+    const savedData = JSON.parse(localStorage.getItem('dashboardData')) || {};
+    const order = savedData.orderQueue?.find(o => o.id === trackingCode);
+
+    if (order) {
+      document.getElementById('status').textContent = "Current Status: " + order.status.toUpperCase();
+    } else {
+      document.getElementById('status').textContent = "❌ No order found with this tracking code.";
+    }
+  </script>
+</body>
+</html>

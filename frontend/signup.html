@@ -63,7 +63,7 @@
 
     try {
       console.log("Signup data being sent:", userData);
-      const res = await fetch("http://localhost:5002/api/auth/register", {
+      const res = await fetch("http://localhost:5002/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
@@ -81,7 +81,7 @@ console.log("Signup response data:", data);
 
     } catch (error) {
       console.error("Signup error:", error);
-      alert("Network or server error. Please make sure your backend is running on port 5001.");
+      alert("Network or server error. Please make sure your backend is running on port 5002.");
     } finally {
       signupBtn.disabled = false;
       signupBtn.textContent = "Sign Up";

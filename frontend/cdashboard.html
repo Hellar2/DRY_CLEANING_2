@@ -332,7 +332,17 @@
         function generateQRCode(){
             const qrContainer=document.getElementById('qrcode');
             qrContainer.innerHTML='';
-            const qrText=`${API_BASE}/customer/${dashboardData.userName}/orders`;
+            
+            // Get userId from localStorage
+            const userId = localStorage.getItem('userId');
+            
+            if (!userId) {
+                qrContainer.innerHTML = '<p style="color: red;">Please login to generate QR code</p>';
+                return;
+            }
+            
+            // Generate QR code with userId
+            const qrText=`${API_BASE}/customer/${userId}/orders`;
             new QRCode(qrContainer,{text:qrText,width:150,height:150,colorDark:"#000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.H});
         }
 

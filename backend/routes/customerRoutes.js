@@ -3,54 +3,38 @@
 // ===========================
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
+const Order = require('../models/Order');
 
-router.get("/:username/orders", async (req, res) => {
+// Get customer orders by userId (for QR code scanning)
+router.get("/:userId/orders", async (req, res) => {
   try {
-    const username = req.params.username;
+    const userId = req.params.userId;
 
-    // Find user
-    const user = await User.findOne({ username });
+    // Find user by ID
+    const user = await User.findById(userId).select('-password');
     if (!user) {
-      return res.status(404).send(`<h2>User not found</h2>`);
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Fetch user's orders
-    const orders = await Order.find({ customerId: user._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
 
-    if (orders.length === 0) {
-      return res.send(`
-        <h2>No Orders Found for ${username}</h2>
-        <p>This customer has not placed any orders yet.</p>
-      `);
-    }
-
-    // Build HTML response
-    let html = `
-      <div style="font-family:Arial, sans-serif; padding:20px;">
-        <h1 style="color:#333;">${username}'s Orders</h1>
-        <ul style="list-style-type:none; padding:0;">
-    `;
-
-    orders.forEach(order => {
-      html += `
-        <li style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:8px;">
-          <strong>Order ID:</strong> ${order._id}<br>
-          <strong>Status:</strong> ${order.status}<br>
-          <strong>Total:</strong> KES ${order.price}<br>
-          <strong>Created:</strong> ${new Date(order.createdAt).toLocaleString()}
-        </li>
-      `;
+    // Return JSON response
+    res.json({
+      user: {
+        fullname: user.fullname,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      orders: orders,
+      totalOrders: orders.length
     });
 
-    html += `
-        </ul>
-      </div>
-    `;
-
-    res.send(html);
   } catch (err) {
-    console.error(err);
-    res.status(500).send(`<h2>Server Error</h2><p>${err.message}</p>`);
+    console.error('Error fetching customer orders:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 

@@ -1,133 +1,94 @@
 const express = require("express");
 const router = express.Router();
+const adminController = require("../controllers/adminController");
+const authMiddleware = require("../middleware/authMiddleware");
+const allowedRoles = require("../middleware/roleMiddleware");
 
-// Import Models
-const User = require("../models/User");
-const Order = require("../models/Order");
+// All admin routes require authentication and Admin role
+router.use(authMiddleware);
+router.use(allowedRoles(["Admin"]));
+
+// ===========================
+// DASHBOARD & STATISTICS
+// ===========================
+router.get("/dashboard", adminController.getDashboardStats);
+
+// ===========================
+// USER MANAGEMENT
+// ===========================
+
+// Get all users
+router.get("/users", adminController.getAllUsers);
+
+// Get user by ID
+router.get("/users/:userId", adminController.getUserById);
+
+// Add new user
+router.post("/users", adminController.addUser);
+
+// Update user role/privileges
+router.put("/users/:userId/role", adminController.updateUserRole);
+
+// Revoke user access
+router.put("/users/:userId/revoke", adminController.revokeUserAccess);
+
+// Delete user
+router.delete("/users/:userId", adminController.deleteUser);
+
+// ===========================
+// SETTINGS (Keep existing)
+// ===========================
+
 const Settings = require("../models/Settings");
 
-// =====================
-// DASHBOARD STATS
-// =====================
-router.get("/dashboard", async (req, res) => {
+router.get("/settings", async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const activeOrders = await Order.countDocuments({ status: { $in: ["Received", "In Progress"] } });
-    res.json({ totalUsers, activeOrders });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// =====================
-// USERS CRUD
-// =====================
-// Get all users
-router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = await Settings.create({ siteName: "DryClean Pro", adminEmail: "admin@dryclean.com" });
+    }
+    res.json(settings);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Create a new user
-router.post("/users", async (req, res) => {
+router.put("/settings", async (req, res) => {
   try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings(req.body);
+    } else {
+      Object.assign(settings, req.body);
+    }
+    await settings.save();
+    res.json(settings);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
-// Update a user
-router.put("/users/:id", async (req, res) => {
-  try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
+// ===========================
+// ORDERS (Keep existing)
+// ===========================
 
-// Delete a user
-router.delete("/users/:id", async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "User deleted" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+const Order = require("../models/Order");
 
-// =====================
-// ORDERS CRUD
-// =====================
-// Get all orders
 router.get("/orders", async (req, res) => {
   try {
-    const orders = await Order.find();
+    const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Create an order
-router.post("/orders", async (req, res) => {
-  try {
-    const order = new Order(req.body);
-    await order.save();
-    res.status(201).json(order);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-// Update an order
-router.put("/orders/:id", async (req, res) => {
-  try {
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedOrder);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-// Delete an order
 router.delete("/orders/:id", async (req, res) => {
   try {
     await Order.findByIdAndDelete(req.params.id);
     res.json({ message: "Order deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
-  }
-});
-
-// =====================
-// SETTINGS
-// =====================
-// Get settings
-router.get("/settings", async (req, res) => {
-  try {
-    const settings = await Settings.findOne();
-    res.json(settings || {});
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Update settings
-router.put("/settings", async (req, res) => {
-  try {
-    const settings = await Settings.findOneAndUpdate({}, req.body, { new: true, upsert: true });
-    res.json(settings);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
   }
 });
 

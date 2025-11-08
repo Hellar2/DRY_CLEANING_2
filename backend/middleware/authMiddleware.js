@@ -16,6 +16,8 @@ module.exports = async (req, res, next) => {
     if (!user) return res.status(401).json({ message: "User not found" });
 
     req.user = user;
+    req.userId = user._id;
+    req.userRole = user.role;
     next();
   } catch (err) {
     console.error("authMiddleware error:", err);

@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
   <link rel="stylesheet" href="main.css" />
+  <style>
+    .demo-btn {
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+    .demo-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      opacity: 0.9;
+    }
+    .demo-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .demo-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -16,8 +36,20 @@
       <label for="password">Password</label>
       <input id="password" name="password" type="password" required />
       <button type="submit">Login</button>
-      <p>Don’t have an account? <a href="signup.html">Register here</a></p>
+      
+      <!-- Demo Login Section -->
+      <div style="margin: 20px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #2196F3;">
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">🚀 Quick Demo Login:</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="demo-btn" data-role="admin" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #ff5722; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👨‍💼 Admin</button>
+          <button type="button" class="demo-btn" data-role="staff" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👥 Staff</button>
+          <button type="button" class="demo-btn" data-role="customer" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👤 Customer</button>
+        </div>
+      </div>
+      
+      <p>Don't have an account? <a href="signup.html">Register here</a></p>
       <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
+      <p><a href="credentials.html" style="color: #4CAF50;">📋 View Test Credentials</a></p>
     </form>
   </div>
 
@@ -40,17 +72,68 @@
   <script>
     // Set backend base URL
     const API_BASE = 'http://localhost:5002';
+    
+    // Demo account credentials (hardcoded)
+    const DEMO_ACCOUNTS = {
+      admin: {
+        identifier: 'admin@dryclean.com',
+        password: 'admin123'
+      },
+      staff: {
+        identifier: 'staff@dryclean.com',
+        password: 'staff123'
+      },
+      customer: {
+        identifier: 'customer@dryclean.com',
+        password: 'customer123'
+      }
+    };
 
+    // Demo login button handlers
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const role = e.target.dataset.role;
+        const credentials = DEMO_ACCOUNTS[role];
+        
+        if (!credentials) {
+          alert('Demo account not configured');
+          return;
+        }
+        
+        // Fill in the form fields
+        document.getElementById('identifier').value = credentials.identifier;
+        document.getElementById('password').value = credentials.password;
+        
+        // Show loading state
+        e.target.disabled = true;
+        e.target.textContent = 'Logging in...';
+        
+        // Perform login
+        await performLogin(credentials.identifier, credentials.password);
+        
+        // Reset button
+        e.target.disabled = false;
+        e.target.textContent = e.target.textContent.replace('Logging in...', role.charAt(0).toUpperCase() + role.slice(1));
+      });
+    });
+    
     const form = document.getElementById('loginForm');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const identifier = document.getElementById('identifier').value.trim();
       const password = document.getElementById('password').value;
-
+      
+      await performLogin(identifier, password);
+    });
+    
+    // Shared login function
+    async function performLogin(identifier, password) {
       if (!identifier || !password) {
         alert("Please enter both email/phone and password");
         return;
       }
+
+      console.log('🔐 Attempting login with:', { identifier, passwordLength: password.length });
 
       try {
         const res = await fetch(`${API_BASE}/api/auth/login`, {
@@ -95,7 +178,7 @@
         console.error('Login fetch error', err);
         alert('Network error during login');
       }
-    });
+    }
 
     // ===== FORGOT PASSWORD MODAL =====
     const modal = document.getElementById("forgotModal");

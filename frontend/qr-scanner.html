@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Scanner</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .scanner-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    #reader {
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 10px;
+    }
+
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .status {
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s;
+    }
+
+    @keyframes slideUp {
+      from { 
+        transform: translate(-50%, -40%);
+        opacity: 0;
+      }
+      to { 
+        transform: translate(-50%, -50%);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      color: #333;
+      font-size: 20px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #999;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .close-btn:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .user-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .user-info h3 {
+      margin: 0 0 10px 0;
+      color: #667eea;
+      font-size: 18px;
+    }
+
+    .user-info p {
+      margin: 5px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .orders-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .order-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 15px;
+      transition: all 0.3s;
+    }
+
+    .order-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .order-id {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .order-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-received { background: #fff3cd; color: #856404; }
+    .status-processing { background: #cce5ff; color: #004085; }
+    .status-ready { background: #d4edda; color: #155724; }
+    .status-delivered { background: #d1ecf1; color: #0c5460; }
+
+    .order-details {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .order-details div {
+      margin: 5px 0;
+    }
+
+    .order-total {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+      font-weight: bold;
+      color: #667eea;
+      font-size: 16px;
+    }
+
+    .no-orders {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .no-orders svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container">
+    <h1>📱 Scan Customer QR Code</h1>
+    
+    <div id="status" class="status info">
+      Ready to scan. Click "Start Scanner" to begin.
+    </div>
+
+    <div id="reader" style="display: none;"></div>
+
+    <button id="startBtn" class="btn">Start Scanner</button>
+    <button id="stopBtn" class="btn btn-secondary" style="display: none;">Stop Scanner</button>
+    <button onclick="window.location.href='staff-Dashboard.html'" class="btn btn-secondary">Back to Dashboard</button>
+  </div>
+
+  <!-- Orders Modal -->
+  <div id="ordersModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📦 Customer Orders</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading orders...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <script>
+    const API_BASE = 'http://localhost:5002';
+    let html5QrCode = null;
+    let isScanning = false;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const statusDiv = document.getElementById('status');
+    const readerDiv = document.getElementById('reader');
+    const modal = document.getElementById('ordersModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const modalBody = document.getElementById('modalBody');
+
+    function updateStatus(message, type = 'info') {
+      statusDiv.textContent = message;
+      statusDiv.className = `status ${type}`;
+    }
+
+    async function fetchUserOrders(userId) {
+      try {
+        const response = await fetch(`${API_BASE}/api/customer/${userId}/orders`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+    }
+
+    function displayOrders(userData) {
+      const { user, orders } = userData;
+
+      let html = `
+        <div class="user-info">
+          <h3>👤 ${user.fullname}</h3>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Phone:</strong> ${user.phone}</p>
+          <p><strong>Total Orders:</strong> ${orders.length}</p>
+        </div>
+      `;
+
+      if (orders.length === 0) {
+        html += `
+          <div class="no-orders">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <p>No orders found for this customer</p>
+          </div>
+        `;
+      } else {
+        html += '<div class="orders-list">';
+        
+        orders.forEach(order => {
+          const statusClass = `status-${order.status.toLowerCase().replace(' ', '-')}`;
+          const items = order.items || [];
+          
+          html += `
+            <div class="order-card">
+              <div class="order-header">
+                <span class="order-id">Order #${order.orderNumber || order._id.substring(0, 8)}</span>
+                <span class="order-status ${statusClass}">${order.status}</span>
+              </div>
+              <div class="order-details">
+                <div><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</div>
+                <div><strong>Items:</strong> ${items.length} item(s)</div>
+                ${items.length > 0 ? `
+                  <div style="margin-top: 8px; padding-left: 10px;">
+                    ${items.map(item => `• ${item.quantity}x ${item.itemType} - KSh ${item.price}`).join('<br>')}
+                  </div>
+                ` : ''}
+                ${order.pickupDate ? `<div><strong>Pickup:</strong> ${new Date(order.pickupDate).toLocaleDateString()}</div>` : ''}
+              </div>
+              <div class="order-total">
+                Total: KSh ${order.totalAmount || order.total || 0}
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+      }
+
+      modalBody.innerHTML = html;
+    }
+
+    async function onScanSuccess(decodedText) {
+      console.log('QR Code scanned:', decodedText);
+      
+      // Stop scanning
+      if (isScanning) {
+        stopScanner();
+      }
+
+      updateStatus('QR Code detected! Loading orders...', 'success');
+
+      try {
+        // Extract userId from QR code
+        // Expected format: http://localhost:5002/customer/{userId}/orders
+        const urlMatch = decodedText.match(/\/customer\/([^\/]+)\/orders/);
+        
+        if (!urlMatch) {
+          throw new Error('Invalid QR code format');
+        }
+
+        const userId = urlMatch[1];
+        console.log('Fetching orders for userId:', userId);
+
+        // Fetch user orders
+        const userData = await fetchUserOrders(userId);
+
+        // Display modal with orders
+        displayOrders(userData);
+        modal.style.display = 'block';
+
+        updateStatus('Scan complete! View orders in popup.', 'success');
+
+      } catch (error) {
+        console.error('Error processing QR code:', error);
+        updateStatus(`Error: ${error.message}`, 'error');
+        
+        setTimeout(() => {
+          updateStatus('Ready to scan. Click "Start Scanner" to try again.', 'info');
+        }, 3000);
+      }
+    }
+
+    function onScanError(errorMessage) {
+      // Ignore frequent scan errors
+      if (!errorMessage.includes('NotFoundException')) {
+        console.warn('Scan error:', errorMessage);
+      }
+    }
+
+    async function startScanner() {
+      try {
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode("reader");
+        }
+
+        readerDiv.style.display = 'block';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+
+        await html5QrCode.start(
+          { facingMode: "environment" }, // Use back camera
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          onScanSuccess,
+          onScanError
+        );
+
+        isScanning = true;
+        updateStatus('Scanner active. Point camera at QR code.', 'info');
+
+      } catch (error) {
+        console.error('Error starting scanner:', error);
+        updateStatus(`Error: ${error.message}`, 'error');
+        readerDiv.style.display = 'none';
+        startBtn.style.display = 'block';
+        stopBtn.style.display = 'none';
+      }
+    }
+
+    async function stopScanner() {
+      if (html5QrCode && isScanning) {
+        try {
+          await html5QrCode.stop();
+          isScanning = false;
+          readerDiv.style.display = 'none';
+          startBtn.style.display = 'block';
+          stopBtn.style.display = 'none';
+          updateStatus('Scanner stopped.', 'info');
+        } catch (error) {
+          console.error('Error stopping scanner:', error);
+        }
+      }
+    }
+
+    // Event listeners
+    startBtn.addEventListener('click', startScanner);
+    stopBtn.addEventListener('click', stopScanner);
+    
+    closeModalBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (isScanning) {
+        stopScanner();
+      }
+    });
+  </script>
+</body>
+</html>

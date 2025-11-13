@@ -83,9 +83,10 @@ function renderOrders() {
 
     orders.forEach(order => {
         const tr = document.createElement("tr");
+        const customerName = order.userId?.fullname || order.userId?.email || "N/A";
         tr.innerHTML = `
             <td>${order.orderNumber}</td>
-            <td>${order.customerId?.fullname || order.customerId?.email || "N/A"}</td>
+            <td>${customerName}</td>
             <td>${order.garmentType || "—"}</td>
             <td>${order.quantity || 1}</td>
             <td>

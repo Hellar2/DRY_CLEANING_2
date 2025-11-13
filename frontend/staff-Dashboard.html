@@ -139,25 +139,73 @@ let orders = [];
 
 async function loadSummary(){
   try{
-    const res = await fetch(`${API_BASE}/summary`, { headers:{'Authorization':`Bearer ${localStorage.getItem('authToken')||''}`}});
-    if(!res.ok) throw new Error("summary failed");
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('No auth token found');
+      toast('Please login first');
+      setTimeout(() => window.location.href = 'login.html', 1500);
+      return;
+    }
+
+    const res = await fetch(`${API_BASE}/summary`, { 
+      headers:{'Authorization':`Bearer ${token}`}
+    });
+    
+    if(!res.ok) {
+      const errorData = await res.json();
+      console.error('Summary error:', errorData);
+      if (res.status === 401 || res.status === 403) {
+        toast('Unauthorized. Please login as staff.');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      throw new Error(errorData.message || "summary failed");
+    }
+    
     const s = await res.json();
     totalEl.textContent = s.total ?? 0;
     receivedEl.textContent = s.received ?? 0;
     inProgressEl.textContent = s.inProgress ?? 0;
     completedEl.textContent = s.completed ?? 0;
     readyEl.textContent = s.ready ?? 0;
-  }catch(err){console.error(err);}
+  }catch(err){
+    console.error('Summary load error:', err);
+    toast('Error loading summary');
+  }
 }
 
 async function loadOrders(){
   try{
-    const res = await fetch(`${API_BASE}/orders`, { headers:{'Authorization':`Bearer ${localStorage.getItem('authToken')||''}`}});
-    if(!res.ok) throw new Error("orders failed");
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('No auth token found');
+      ordersBody.innerHTML='<tr><td colspan="8">Please login first</td></tr>';
+      return;
+    }
+
+    const res = await fetch(`${API_BASE}/orders`, { 
+      headers:{'Authorization':`Bearer ${token}`}
+    });
+    
+    if(!res.ok) {
+      const errorData = await res.json();
+      console.error('Orders error:', errorData);
+      if (res.status === 401 || res.status === 403) {
+        toast('Unauthorized. Please login as staff.');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+      throw new Error(errorData.message || "orders failed");
+    }
+    
     const data = await res.json();
     orders = Array.isArray(data)? data : [];
     renderOrders();
-  }catch(err){console.error(err); ordersBody.innerHTML="";}
+  }catch(err){
+    console.error('Orders load error:', err);
+    ordersBody.innerHTML='<tr><td colspan="8">Error loading orders</td></tr>';
+    toast('Error loading orders');
+  }
 }
 
 function renderOrders(){
@@ -165,9 +213,10 @@ function renderOrders(){
   if(orders.length===0){ordersBody.innerHTML='<tr><td colspan="8">No orders yet</td></tr>'; return;}
   orders.forEach(o=>{
     const tr=document.createElement("tr");
+    const customerName = o.userId?.fullname || o.userId?.email || "N/A";
     tr.innerHTML=`
       <td>${o.orderNumber}</td>
-      <td>${o.customerId?.fullname||o.customerId?.email||"N/A"}</td>
+      <td>${customerName}</td>
       <td>${o.garmentType||"—"}</td>
       <td>${o.quantity||1}</td>
       <td>

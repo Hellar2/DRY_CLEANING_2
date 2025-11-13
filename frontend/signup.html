@@ -5,6 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign Up</title>
   <link rel="stylesheet" href="main.css" />
+  <style>
+    /* Password toggle styles */
+    .password-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-container input {
+      width: 100%;
+      padding-right: 45px; /* Space for the toggle button */
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .eye-icon {
+      font-size: 16px;
+      user-select: none;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -22,12 +58,16 @@
       <input type="email" id="email" placeholder="Enter email" required />
 
       <label>Password</label>
-      <input type="password" id="password" placeholder="Enter password" required />
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Enter password" required />
+        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+          <span class="eye-icon">👁️</span>
+        </button>
+      </div>
 
       <label>User Role</label>
       <select id="role" required>
         <option value="">-- Select Role --</option>
-        <option value="Admin">Admin</option>
         <option value="Customer">Customer</option>
         <option value="Staff">Staff</option>
       </select>
@@ -35,12 +75,28 @@
       <button type="button" id="signupBtn">Sign Up</button>
     </form>
 
+    <div id="verificationSection" style="display: none; margin-top: 20px;">
+      <h2>Verify Your Account</h2>
+      <p class="subtitle">Enter the 7-digit verification code sent to your email</p>
+      <label>Verification Code</label>
+      <input type="text" id="verificationCode" placeholder="Enter 7-digit code" maxlength="7" style="text-transform: uppercase;" />
+      <button type="button" id="verifyBtn">Verify Account</button>
+      <button type="button" id="resendBtn" style="margin-top: 10px; background: #6c757d;">Resend Code</button>
+    </div>
+
     <p class="footer-text">Already have an account? <a href="login.html">Log In</a></p>
   </div>
 
   <script>
   const signupForm = document.getElementById("signupForm");
   const signupBtn = document.getElementById("signupBtn");
+  const verificationSection = document.getElementById("verificationSection");
+  const verifyBtn = document.getElementById("verifyBtn");
+  const resendBtn = document.getElementById("resendBtn");
+  const verificationCodeInput = document.getElementById("verificationCode");
+
+  let pendingUserId = null;
+  let pendingEmail = null;
 
   signupBtn.addEventListener("click", async (e) => {
     e.preventDefault();
@@ -70,13 +126,21 @@
       });
 
       const data = await res.json();
-console.log("Signup response data:", data);
+      console.log("Signup response data:", data);
 
-      if (res.ok) {
+      if (res.ok && data.requiresVerification) {
+        pendingUserId = data.userId;
+        pendingEmail = data.email;
+        alert(data.message || "Account created! Please check your email for the verification code.");
+        
+        // Hide signup form and show verification section
+        signupForm.style.display = "none";
+        verificationSection.style.display = "block";
+      } else if (res.ok) {
         alert(data.message || "Account created successfully!");
         window.location.href = "login.html";
       } else {
-  alert(data.message || "Signup failed. Please try again.");
+        alert(data.message || "Signup failed. Please try again.");
       }
 
     } catch (error) {
@@ -87,6 +151,101 @@ console.log("Signup response data:", data);
       signupBtn.textContent = "Sign Up";
     }
   });
+
+  verifyBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const code = verificationCodeInput.value.trim().toUpperCase();
+
+    if (!code || code.length !== 7) {
+      alert("Please enter a valid 7-digit verification code.");
+      return;
+    }
+
+    if (!pendingUserId) {
+      alert("No pending verification. Please sign up first.");
+      return;
+    }
+
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = "Verifying...";
+
+    try {
+      const res = await fetch("http://localhost:5002/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: pendingUserId, verificationCode: code }),
+      });
+
+      const data = await res.json();
+      console.log("Verification response:", data);
+
+      if (res.ok) {
+        // Store the token
+        localStorage.setItem("authToken", data.token);
+        alert(data.message || "Account verified successfully!");
+        window.location.href = "login.html";
+      } else {
+        alert(data.message || "Verification failed. Please try again.");
+      }
+
+    } catch (error) {
+      console.error("Verification error:", error);
+      alert("Network or server error. Please try again.");
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = "Verify Account";
+    }
+  });
+
+  // Resend OTP functionality
+  resendBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (!pendingEmail) {
+      alert("No email found. Please try signing up again.");
+      return;
+    }
+
+    resendBtn.disabled = true;
+    resendBtn.textContent = "Resending...";
+
+    try {
+      const res = await fetch("http://localhost:5002/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.message || "New verification code sent to your email!");
+      } else {
+        alert(data.message || "Failed to resend code. Please try again.");
+      }
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      alert("Network error. Please try again.");
+    } finally {
+      resendBtn.disabled = false;
+      resendBtn.textContent = "Resend Code";
+    }
+  });
+
+  // Toggle password visibility
+  function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const eyeIcon = passwordInput.nextElementSibling.querySelector('.eye-icon');
+    
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.textContent = '🙈';
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.textContent = '👁️';
+    }
+  }
 </script>
 
 </body>

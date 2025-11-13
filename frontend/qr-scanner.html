@@ -2,13 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>QR Code Scanner</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    @media (max-width: 600px) {
+      :root {
+        font-size: 14px;
+      }
     }
 
     body {
@@ -17,17 +24,28 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       padding: 20px;
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
     }
 
     .scanner-container {
       background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      max-width: 500px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 100%;
       width: 100%;
-      padding: 30px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    
+    @media (min-width: 768px) {
+      .scanner-container {
+        max-width: 500px;
+        padding: 30px;
+        margin-top: 0;
+      }
     }
 
     h1 {
@@ -41,20 +59,45 @@
       border: 2px solid #667eea;
       border-radius: 10px;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin: 0 auto 20px;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      background: #f8f9fa;
+    }
+    
+    #reader video {
+      width: 100% !important;
+      height: auto !important;
+    }
+    
+    #reader__dashboard_section_csr {
+      padding: 10px;
     }
 
     .btn {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       background: #667eea;
       color: white;
       border: none;
       border-radius: 8px;
       font-size: 16px;
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.3s;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      text-align: center;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    
+    @media (max-width: 480px) {
+      .btn {
+        padding: 12px;
+        font-size: 15px;
+      }
     }
 
     .btn:hover {
@@ -100,7 +143,7 @@
       color: #721c24;
     }
 
-    /* Modal Styles */
+    /* Modal styles */
     .modal {
       display: none;
       position: fixed;
@@ -108,9 +151,12 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.7);
+      background-color: rgba(0, 0, 0, 0.7);
       z-index: 1000;
-      animation: fadeIn 0.3s;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
     @keyframes fadeIn {
@@ -119,29 +165,203 @@
     }
 
     .modal-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
       background: white;
-      border-radius: 15px;
-      width: 90%;
+      border-radius: 12px;
       max-width: 600px;
+      width: 90%;
       max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      animation: slideUp 0.3s;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
-    @keyframes slideUp {
-      from { 
-        transform: translate(-50%, -40%);
-        opacity: 0;
-      }
-      to { 
-        transform: translate(-50%, -50%);
-        opacity: 1;
-      }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: white;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+
+    .close-btn:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    /* Order Details Popup Styles */
+    .order-details-popup h3 {
+      color: #1f2937;
+      margin-bottom: 20px;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+
+    .order-info {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-row strong {
+      color: #374151;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.received {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.in-progress {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-badge.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.ready-for-pickup {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .payment-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .payment-badge.paid {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .payment-badge.pending {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .items-breakdown {
+      margin-bottom: 20px;
+    }
+
+    .items-breakdown h4 {
+      color: #374151;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f9fafb;
+      margin-bottom: 4px;
+      border-radius: 4px;
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+      transform: translateY(-1px);
     }
 
     .modal-header {
@@ -354,9 +574,97 @@
       statusDiv.className = `status ${type}`;
     }
 
+    async function fetchOrderDetails(orderNumber) {
+      try {
+        const response = await fetch(`${API_BASE}/customer/track/${orderNumber}`);
+        
+        if (!response.ok) {
+          throw new Error('Order not found');
+        }
+        
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        throw error;
+      }
+    }
+
+    function displayOrderDetails(orderData) {
+      const order = orderData.data;
+      
+      let html = `
+        <div class="order-details-popup">
+          <h3>📦 Order Details</h3>
+          <div class="order-info">
+            <div class="info-row">
+              <strong>Order Number:</strong> ${order.orderNumber}
+            </div>
+            <div class="info-row">
+              <strong>Status:</strong> <span class="status-badge ${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span>
+            </div>
+            <div class="info-row">
+              <strong>Service Type:</strong> ${order.serviceType}
+            </div>
+            <div class="info-row">
+              <strong>Items:</strong> ${order.garmentType}
+            </div>
+            <div class="info-row">
+              <strong>Quantity:</strong> ${order.quantity}
+            </div>
+            <div class="info-row">
+              <strong>Total Amount:</strong> KES ${order.price || order.totalAmount || 0}
+            </div>
+            <div class="info-row">
+              <strong>Payment Status:</strong> <span class="payment-badge ${order.paymentStatus.toLowerCase()}">${order.paymentStatus}</span>
+            </div>
+            <div class="info-row">
+              <strong>Created:</strong> ${new Date(order.createdAt).toLocaleDateString()} ${new Date(order.createdAt).toLocaleTimeString()}
+            </div>
+            ${order.pickupDate ? `
+            <div class="info-row">
+              <strong>Pickup Date:</strong> ${new Date(order.pickupDate).toLocaleDateString()}
+            </div>
+            ` : ''}
+          </div>
+          
+          ${order.items && order.items.length > 0 ? `
+          <div class="items-breakdown">
+            <h4>Items Breakdown:</h4>
+            ${order.items.map(item => `
+              <div class="item-row">
+                <span>${item.quantity}x ${item.itemType}</span>
+                <span>KES ${item.price}</span>
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+          
+          <div class="order-actions">
+            <button class="btn btn-primary" onclick="updateOrderStatus('${order.orderNumber}')">Update Status</button>
+            <button class="btn btn-secondary" onclick="printOrderDetails('${order.orderNumber}')">Print</button>
+          </div>
+        </div>
+      `;
+
+      modalBody.innerHTML = html;
+    }
+
+    async function updateOrderStatus(orderNumber) {
+      // This function can be implemented to allow staff to update order status
+      console.log('Update status for order:', orderNumber);
+      alert('Status update feature coming soon!');
+    }
+
+    function printOrderDetails(orderNumber) {
+      // This function can be implemented to print order details
+      console.log('Print order:', orderNumber);
+      window.print();
+    }
+
     async function fetchUserOrders(userId) {
       try {
-        const response = await fetch(`${API_BASE}/api/customer/${userId}/orders`);
+        const response = await fetch(`${API_BASE}/customer/${userId}/orders`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -435,28 +743,43 @@
         stopScanner();
       }
 
-      updateStatus('QR Code detected! Loading orders...', 'success');
+      updateStatus('QR Code detected! Loading order details...', 'success');
 
       try {
-        // Extract userId from QR code
-        // Expected format: http://localhost:5002/customer/{userId}/orders
-        const urlMatch = decodedText.match(/\/customer\/([^\/]+)\/orders/);
+        // Check if it's an order-specific QR code
+        // Expected format: http://localhost:3000/track.html?order=ORD-1234567890
+        const orderMatch = decodedText.match(/order=([^&]+)/);
         
-        if (!urlMatch) {
-          throw new Error('Invalid QR code format');
+        if (orderMatch) {
+          // It's an order-specific QR code
+          const orderNumber = orderMatch[1];
+          console.log('Fetching order details for orderNumber:', orderNumber);
+          
+          const orderData = await fetchOrderDetails(orderNumber);
+          displayOrderDetails(orderData);
+          modal.style.display = 'block';
+          
+        } else {
+          // Check if it's a user QR code
+          // Expected format: http://localhost:5002/customer/{userId}/orders
+          const urlMatch = decodedText.match(/\/customer\/([^\/]+)\/orders/);
+          
+          if (!urlMatch) {
+            throw new Error('Invalid QR code format');
+          }
+
+          const userId = urlMatch[1];
+          console.log('Fetching orders for userId:', userId);
+
+          // Fetch user orders
+          const userData = await fetchUserOrders(userId);
+
+          // Display modal with orders
+          displayOrders(userData);
+          modal.style.display = 'block';
         }
 
-        const userId = urlMatch[1];
-        console.log('Fetching orders for userId:', userId);
-
-        // Fetch user orders
-        const userData = await fetchUserOrders(userId);
-
-        // Display modal with orders
-        displayOrders(userData);
-        modal.style.display = 'block';
-
-        updateStatus('Scan complete! View orders in popup.', 'success');
+        updateStatus('Scan complete! View details in popup.', 'success');
 
       } catch (error) {
         console.error('Error processing QR code:', error);
@@ -481,22 +804,53 @@
           html5QrCode = new Html5Qrcode("reader");
         }
 
+        // Calculate QR box size based on screen width
+        const qrboxSize = Math.min(300, window.innerWidth - 60);
+        
         readerDiv.style.display = 'block';
         startBtn.style.display = 'none';
         stopBtn.style.display = 'block';
+        
+        // Show loading state
+        updateStatus('Initializing camera...', 'info');
 
-        await html5QrCode.start(
-          { facingMode: "environment" }, // Use back camera
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          onScanSuccess,
-          onScanError
-        );
-
-        isScanning = true;
-        updateStatus('Scanner active. Point camera at QR code.', 'info');
+        try {
+          await html5QrCode.start(
+            { facingMode: "environment" }, // Use back camera
+            {
+              fps: 10,
+              qrbox: { 
+                width: qrboxSize,
+                height: qrboxSize
+              },
+              aspectRatio: 1.0
+            },
+            onScanSuccess,
+            onScanError
+          );
+          
+          isScanning = true;
+          updateStatus('Scanner active. Point camera at QR code.', 'info');
+        } catch (err) {
+          // If back camera fails, try user-facing camera
+          console.warn('Back camera not available, trying front camera...', err);
+          await html5QrCode.start(
+            { facingMode: "user" },
+            {
+              fps: 10,
+              qrbox: { 
+                width: qrboxSize,
+                height: qrboxSize
+              },
+              aspectRatio: 1.0
+            },
+            onScanSuccess,
+            onScanError
+          );
+          
+          isScanning = true;
+          updateStatus('Using front camera. Point at QR code.', 'info');
+        }
 
       } catch (error) {
         console.error('Error starting scanner:', error);
@@ -522,9 +876,22 @@
       }
     }
 
-    // Event listeners
+    // Event listeners with touch support
     startBtn.addEventListener('click', startScanner);
+    startBtn.addEventListener('touchend', startScanner);
+    
     stopBtn.addEventListener('click', stopScanner);
+    stopBtn.addEventListener('touchend', stopScanner);
+    
+    // Handle orientation changes
+    window.addEventListener('orientationchange', function() {
+      // Small delay to allow orientation to change
+      setTimeout(() => {
+        if (isScanning) {
+          stopScanner().then(() => startScanner());
+        }
+      }, 300);
+    });
     
     closeModalBtn.addEventListener('click', () => {
       modal.style.display = 'none';

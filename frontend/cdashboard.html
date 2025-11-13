@@ -25,7 +25,11 @@
         <main class="main-content">
             <header class="content-header">
                 <h1>Customer Dashboard</h1>
+                <div class="user-welcome" id="userWelcome">
+                    <p>Welcome back, <strong id="userName">Customer</strong>!</p>
+                </div>
             </header>
+
 
             <!-- QR Code Section -->
             <div class="qr-section">
@@ -206,6 +210,7 @@
             setInterval(progressOrders, 5000);
         }
 
+
         function updateDashboard(){
             document.getElementById('currentOrders').textContent = dashboardData.stats.currentOrders;
             document.getElementById('readyOrders').textContent = dashboardData.stats.readyOrders;
@@ -266,35 +271,112 @@
             return names[itemType]||itemType;
         }
 
-        function createCustomOrder(){
-            const selectedItems=[];
-            let hasItems=false;
-            document.querySelectorAll('.item-option').forEach(option=>{
-                const checkbox=option.querySelector('input[type="checkbox"]');
-                const quantity=parseInt(option.querySelector('.item-quantity').value)||0;
-                if(checkbox.checked && quantity>0){ 
-                    selectedItems.push({type: checkbox.value, quantity}); 
-                    hasItems=true; 
+        async function createCustomOrder(){
+            try {
+                // Collect selected items
+                const selectedItems = [];
+                let hasItems = false;
+                
+                document.querySelectorAll('.item-option').forEach(option => {
+                    const checkbox = option.querySelector('input[type="checkbox"]');
+                    const quantity = parseInt(option.querySelector('.item-quantity').value) || 0;
+                    
+                    if (checkbox.checked && quantity > 0) {
+                        selectedItems.push({
+                            itemType: checkbox.value,
+                            quantity: quantity,
+                            price: parseInt(checkbox.dataset.price)
+                        });
+                        hasItems = true;
+                    }
+                });
+
+                // Validate items
+                if (!hasItems) {
+                    alert('Please select at least one item for your order!');
+                    return;
                 }
-            });
-            if(!hasItems){ 
-                alert('Please select at least one item for your order!'); 
-                return; 
+
+                // Get user authentication
+                const userId = localStorage.getItem('userId');
+                const authToken = localStorage.getItem('authToken');
+                
+                if (!userId) {
+                    alert('Please login to create an order');
+                    return;
+                }
+
+                // Calculate total
+                const total = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+                // Prepare order data
+                const orderData = {
+                    items: selectedItems,
+                    garmentType: selectedItems.map(item => item.itemType).join(', '),
+                    quantity: selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+                    serviceType: 'Standard',
+                    price: total,
+                    totalAmount: total
+                };
+
+                console.log('📤 Sending order data:', orderData);
+
+                // Show loading state
+                const createBtn = document.querySelector('.auto-btn');
+                const originalText = createBtn.textContent;
+                createBtn.textContent = 'Creating Order...';
+                createBtn.disabled = true;
+
+                // Make API call
+                const response = await fetch(`${API_BASE}/customer/${userId}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                // Check response type
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Invalid server response. Please try again.');
+                }
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Success handling
+                    const itemsDesc = selectedItems.map(item => 
+                        `${item.quantity}x ${getItemDisplayName(item.itemType)}`
+                    ).join(', ');
+
+                    // Update dashboard
+                    dashboardData.stats.currentOrders++;
+                    dashboardData.stats.totalOrders++;
+                    addActivity(`New order #${result.order.orderNumber} created - ${itemsDesc} - ${formatCurrency(total)}`);
+
+                    // Reset form and update UI
+                    resetOrderForm();
+                    updateDashboard();
+
+                    // Show success message
+                    alert(`Order #${result.order.orderNumber} created successfully!\n\nItems: ${itemsDesc}\nTotal: ${formatCurrency(total)}\n\nQR Code has been generated for tracking.`);
+
+                } else {
+                    // Handle server errors
+                    throw new Error(result.message || result.error || 'Failed to create order');
+                }
+
+            } catch (error) {
+                console.error('❌ Order creation error:', error);
+                alert(`Error creating order: ${error.message}`);
+            } finally {
+                // Restore button state
+                const createBtn = document.querySelector('.auto-btn');
+                createBtn.textContent = 'Create Order';
+                createBtn.disabled = false;
             }
-
-            const total=selectedItems.reduce((sum,i)=>sum+kenyanPricing[i.type]*i.quantity,0);
-            const orderId = dashboardData.nextOrderId++;
-            const order = {id:orderId,status:'received',timestamp:new Date(),items:selectedItems,total};
-            dashboardData.orderQueue.push(order);
-            dashboardData.stats.currentOrders++; 
-            dashboardData.stats.totalOrders++;
-
-            const itemsDesc=selectedItems.map(i=>`${i.quantity}x ${getItemDisplayName(i.type)}`).join(', ');
-            addActivity(`New order #${orderId} created - ${itemsDesc} - ${formatCurrency(total)}`);
-
-            resetOrderForm(); 
-            updateDashboard();
-            alert(`Order #${orderId} created!\nItems: ${itemsDesc}\nTotal: ${formatCurrency(total)}`);
         }
 
         function resetOrderForm(){

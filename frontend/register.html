@@ -6,7 +6,11 @@
 <title>Register Order | Dry Cleaning</title>
 <style>
   body { font-family: Arial, sans-serif; background: #0b1220; color: #dbe7ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-  .card { background: #0f1724; padding: 24px; border-radius: 10px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); width: 100%; max-width: 400px; }
+  .card { background: #0f1724; padding: 24px; border-radius: 10px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); width: 100%; max-width: 500px; }
+  .customer-results { max-height: 200px; overflow-y: auto; background: #071022; border: 1px solid #3b82f6; border-radius: 6px; margin-top: 4px; display: none; }
+  .customer-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(59, 130, 246, 0.2); }
+  .customer-item:hover { background: #0b1220; }
+  .selected-customer { background: #16a34a; padding: 8px; border-radius: 6px; margin-top: 8px; display: none; }
   h2 { text-align: center; margin-bottom: 16px; }
   label { display: block; margin: 12px 0 4px; font-weight: 700; }
   input, select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; background: #071022; color: #dbe7ff; }
@@ -20,7 +24,13 @@
 <div class="card">
   <h2>Register Order</h2>
   <form id="registerForm">
-    <label for="garmentType">Garment Type</label>
+    <label for="customerSearch">Search Customer (Name or Email) *</label>
+    <input type="text" id="customerSearch" placeholder="Type to search customers..." autocomplete="off">
+    <div id="customerResults" class="customer-results"></div>
+    <div id="selectedCustomer" class="selected-customer"></div>
+    <input type="hidden" id="customerId" name="customerId">
+
+    <label for="garmentType">Garment Type *</label>
     <input type="text" id="garmentType" name="garmentType" required>
 
     <label for="quantity">Quantity</label>
@@ -46,6 +56,13 @@
 <script>
 const form = document.getElementById('registerForm');
 const toastContainer = document.getElementById('toastContainer');
+const customerSearch = document.getElementById('customerSearch');
+const customerResults = document.getElementById('customerResults');
+const selectedCustomerDiv = document.getElementById('selectedCustomer');
+const customerIdInput = document.getElementById('customerId');
+
+let selectedCustomer = null;
+let searchTimeout = null;
 
 function toast(msg, duration = 3000) {
   const t = document.createElement('div');
@@ -57,25 +74,120 @@ function toast(msg, duration = 3000) {
 
 // Auto-generate order number
 function generateOrderNumber() {
-  const timestamp = Date.now().toString().slice(-6); // last 6 digits of timestamp
+  const timestamp = Date.now().toString().slice(-6);
   const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
   return `ORD-${timestamp}-${random}`;
 }
 
+// Search customers
+async function searchCustomers(query) {
+  if (query.length < 2) {
+    customerResults.style.display = 'none';
+    return;
+  }
+
+  try {
+    const res = await fetch(`http://localhost:5002/api/staff/customers/search?query=${encodeURIComponent(query)}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+      }
+    });
+
+    if (!res.ok) throw new Error('Search failed');
+    
+    const customers = await res.json();
+    displayCustomerResults(customers);
+  } catch (err) {
+    console.error('Customer search error:', err);
+    toast('Error searching customers');
+  }
+}
+
+// Display customer search results
+function displayCustomerResults(customers) {
+  customerResults.innerHTML = '';
+  
+  if (customers.length === 0) {
+    customerResults.innerHTML = '<div class="customer-item">No customers found</div>';
+    customerResults.style.display = 'block';
+    return;
+  }
+
+  customers.forEach(customer => {
+    const div = document.createElement('div');
+    div.className = 'customer-item';
+    div.innerHTML = `
+      <strong>${customer.fullname}</strong><br>
+      <small>${customer.email}</small>
+    `;
+    div.onclick = () => selectCustomer(customer);
+    customerResults.appendChild(div);
+  });
+
+  customerResults.style.display = 'block';
+}
+
+// Select a customer
+function selectCustomer(customer) {
+  selectedCustomer = customer;
+  customerIdInput.value = customer._id;
+  customerSearch.value = '';
+  customerResults.style.display = 'none';
+  
+  selectedCustomerDiv.innerHTML = `
+    <strong>Selected Customer:</strong> ${customer.fullname} (${customer.email})
+    <button type="button" onclick="clearCustomer()" style="float: right; background: #ef4444; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; color: white;">✕</button>
+  `;
+  selectedCustomerDiv.style.display = 'block';
+}
+
+// Clear selected customer
+function clearCustomer() {
+  selectedCustomer = null;
+  customerIdInput.value = '';
+  selectedCustomerDiv.style.display = 'none';
+}
+window.clearCustomer = clearCustomer;
+
+// Customer search with debounce
+customerSearch.addEventListener('input', (e) => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchCustomers(e.target.value);
+  }, 300);
+});
+
+// Hide results when clicking outside
+document.addEventListener('click', (e) => {
+  if (!customerSearch.contains(e.target) && !customerResults.contains(e.target)) {
+    customerResults.style.display = 'none';
+  }
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  // Validate customer selection
+  if (!customerIdInput.value) {
+    toast('⚠️ Please select a customer first');
+    return;
+  }
 
   // Disable submit to prevent duplicates
   const submitBtn = form.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
+  submitBtn.textContent = 'Registering...';
 
   const orderData = {
+    userId: customerIdInput.value,
     orderNumber: generateOrderNumber(),
     garmentType: form.garmentType.value.trim(),
     quantity: Number(form.quantity.value),
     serviceType: form.serviceType.value,
     price: Number(form.price.value)
   };
+
+  console.log('Submitting order:', orderData);
 
   try {
     const res = await fetch('http://localhost:5002/api/staff/orders', {
@@ -92,11 +204,18 @@ form.addEventListener('submit', async (e) => {
 
     toast(`✅ Order registered! Order No: ${result.order.orderNumber}`);
     form.reset();
+    clearCustomer();
+    
+    // Redirect to dashboard after 2 seconds
+    setTimeout(() => {
+      window.location.href = 'staff-Dashboard.html';
+    }, 2000);
   } catch (err) {
-    console.error(err);
-    toast(err.message || 'Error registering order');
+    console.error('Order registration error:', err);
+    toast('❌ ' + (err.message || 'Error registering order'));
   } finally {
     submitBtn.disabled = false;
+    submitBtn.textContent = 'Register Order';
   }
 });
 </script>

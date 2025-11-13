@@ -15,16 +15,33 @@ router.post("/", async (req, res) => {
     }
 
     try {
+        // Check if orderId is a valid MongoDB ObjectId
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(orderId)) {
+            // Handle local order IDs (from localStorage)
+            console.log(`Payment for local order: ${orderId}, Amount: ${amount}`);
+            return res.status(200).json({ 
+                message: "Payment recorded for local order", 
+                orderId,
+                amount,
+                method,
+                status: "Completed",
+                note: "This is a local order. Payment recorded in frontend only."
+            });
+        }
+
         const order = await Order.findById(orderId);
-        if (!order) return res.status(404).json({ message: "Order not found" });
+        if (!order) {
+            return res.status(404).json({ message: "Order not found in database" });
+        }
 
         // Create Payment Record
         const payment = new Payment({
             orderId,
-            customerId: order.customerId,
+            customerId: order.userId,
             amount,
             method,
-            status: "Completed", // default to completed after payment
+            status: "Completed",
             date: new Date()
         });
 
@@ -37,7 +54,10 @@ router.post("/", async (req, res) => {
         res.status(201).json({ message: "Payment successful", payment });
     } catch (err) {
         console.error("Error processing payment:", err);
-        res.status(500).json({ message: "Server error processing payment" });
+        res.status(500).json({ 
+            message: "Server error processing payment",
+            error: err.message 
+        });
     }
 });
 

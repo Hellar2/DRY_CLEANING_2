@@ -25,13 +25,28 @@
       </header>
 
       <section class="table-section">
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="orderSearch" placeholder="Search orders by order number or customer" style="padding: 8px; width: 400px;">
+          <select id="statusFilter" style="padding: 8px; margin-left: 10px;">
+            <option value="">All Status</option>
+            <option value="Received">Received</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready for Pickup">Ready for Pickup</option>
+            <option value="Completed">Completed</option>
+            <option value="Picked Up">Picked Up</option>
+          </select>
+        </div>
         <table>
           <thead>
             <tr>
               <th>#</th>
+              <th>Order Number</th>
               <th>Customer</th>
-              <th>Item</th>
+              <th>Garment Type</th>
+              <th>Quantity</th>
+              <th>Amount</th>
               <th>Status</th>
+              <th>Payment</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -44,34 +59,77 @@
 
   <script>
     const ordersTable = document.getElementById('ordersTable');
+    const orderSearch = document.getElementById('orderSearch');
+    const statusFilter = document.getElementById('statusFilter');
     let orders = [];
+    let allOrders = [];
 
     async function fetchOrders() {
       try {
-        const res = await fetch('http://localhost:5002/api/admin/orders');
-        orders = await res.json();
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Please login first');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const res = await fetch('http://localhost:5002/api/admin/orders', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            alert('Unauthorized. Please login as admin.');
+            window.location.href = 'login.html';
+            return;
+          }
+          throw new Error('Failed to fetch orders');
+        }
+
+        allOrders = await res.json();
+        console.log('Orders data:', allOrders);
+        orders = allOrders;
         renderOrders(orders);
-      } catch(err) { console.error(err); }
+      } catch(err) { 
+        console.error('Error fetching orders:', err);
+        alert('Error loading orders');
+      }
     }
 
     function renderOrders(data){
       ordersTable.innerHTML = '';
-      if(!data.length) {
-        ordersTable.innerHTML = '<tr><td colspan="6">No orders found</td></tr>';
+      if(!data || !data.length) {
+        ordersTable.innerHTML = '<tr><td colspan="10">No orders found</td></tr>';
         return;
       }
-      data.forEach(order=>{
+      data.forEach((order, index)=>{
         const row = document.createElement('tr');
         row.dataset.id = order._id;
+        const statusColor = {
+          'Received': '#f59e0b',
+          'In Progress': '#3b82f6',
+          'Ready for Pickup': '#8b5cf6',
+          'Completed': '#10b981',
+          'Picked Up': '#059669'
+        }[order.status] || '#6b7280';
+        
+        const paymentColor = order.paymentStatus === 'Paid' ? '#10b981' : '#ef4444';
+        
         row.innerHTML = `
-          <td>${order._id}</td>
-          <td>${order.customer}</td>
-          <td>${order.item}</td>
-          <td>${order.status}</td>
-          <td>${new Date(order.date).toLocaleDateString()}</td>
+          <td>${index + 1}</td>
+          <td><strong>${order.orderNumber || 'N/A'}</strong></td>
+          <td>${order.userId?.fullname || order.userId || 'Unknown'}</td>
+          <td>${order.garmentType || order.garment || 'N/A'}</td>
+          <td>${order.quantity || 1}</td>
+          <td>KSH ${(order.totalAmount || order.price || 0).toLocaleString()}</td>
+          <td><span style="padding: 4px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-size: 12px;">${order.status}</span></td>
+          <td><span style="padding: 4px 8px; background: ${paymentColor}; color: white; border-radius: 4px; font-size: 12px;">${order.paymentStatus}</span></td>
+          <td>${new Date(order.createdAt).toLocaleDateString()}</td>
           <td>
-            <button class="edit">Edit</button>
-            <button class="delete">Delete</button>
+            <button class="edit" style="padding: 5px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">Update</button>
+            <button class="delete" style="padding: 5px 10px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
           </td>
         `;
         ordersTable.appendChild(row);
@@ -82,16 +140,60 @@
       const row = e.target.closest('tr');
       if(!row) return;
       const id = row.dataset.id;
+      const token = localStorage.getItem('authToken');
+
       if(e.target.classList.contains('delete')) {
-        if(confirm("Delete this order?")) {
-          await fetch(`http://localhost:5002/api/admin/orders/${id}`, { method:'DELETE' });
-          fetchOrders();
+        if(confirm("Delete this order? This action cannot be undone.")) {
+          try {
+            const res = await fetch(`http://localhost:5002/api/admin/orders/${id}`, { 
+              method:'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              alert('Order deleted successfully');
+              fetchOrders();
+            } else {
+              alert('Failed to delete order');
+            }
+          } catch(err) {
+            console.error(err);
+            alert('Error deleting order');
+          }
         }
       }
       if(e.target.classList.contains('edit')) {
-        alert(`Edit order ID: ${id}`);
+        const newStatus = prompt("Update order status:\n\nOptions:\n- Received\n- In Progress\n- Ready for Pickup\n- Completed\n- Picked Up");
+        const validStatuses = ['Received', 'In Progress', 'Ready for Pickup', 'Completed', 'Picked Up'];
+        
+        if (newStatus && validStatuses.includes(newStatus)) {
+          // You'll need to create an update endpoint
+          alert(`Status update to "${newStatus}" - Implement update endpoint`);
+        } else if (newStatus) {
+          alert('Invalid status. Please use one of the valid options.');
+        }
       }
     });
+
+    // Search and filter functionality
+    orderSearch.addEventListener('input', filterOrders);
+    statusFilter.addEventListener('change', filterOrders);
+
+    function filterOrders() {
+      const searchTerm = orderSearch.value.toLowerCase();
+      const statusValue = statusFilter.value;
+      
+      let filtered = allOrders.filter(order => {
+        const matchesSearch = !searchTerm || 
+          (order.orderNumber && order.orderNumber.toLowerCase().includes(searchTerm)) ||
+          (order.userId?.fullname && order.userId.fullname.toLowerCase().includes(searchTerm));
+        
+        const matchesStatus = !statusValue || order.status === statusValue;
+        
+        return matchesSearch && matchesStatus;
+      });
+      
+      renderOrders(filtered);
+    }
 
     document.getElementById('logoutBtn').addEventListener('click', e=>{
       e.preventDefault();

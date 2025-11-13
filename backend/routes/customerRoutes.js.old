@@ -1,0 +1,181 @@
+// ===========================
+// Customer Profile & Orders Routes
+// ===========================
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Order = require('../models/Order');
+const { getCustomerOrders, createCustomerOrder } = require('../controllers/customerController');
+
+// IMPORTANT: More specific routes MUST come before generic routes
+// /:userId/orders must be before /:userId
+
+// ===========================
+// POST Create Customer Order
+// ===========================
+router.post("/:userId/orders", createCustomerOrder);
+
+// ===========================
+// GET Customer Orders
+// ===========================
+router.get("/:userId/orders", getCustomerOrders);
+// POST Create Customer Order
+// ===========================
+router.post("/:userId/orders", createCustomerOrder);
+
+// ===========================
+// GET Customer Orders by userId (for QR code scanning)
+// ===========================
+router.get("/:userId/orders", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find user by ID
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch user's orders
+    const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
+
+    // Return JSON response
+    res.json({
+      user: {
+        fullname: user.fullname,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      orders: orders,
+      totalOrders: orders.length
+    });
+
+  } catch (err) {
+    console.error('Error fetching customer orders:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ===========================
+// GET Customer Profile by ID
+// ===========================
+router.get("/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find user by ID, exclude password
+    const user = await User.findById(userId).select('-password -verificationCode -verificationCodeExpires');
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return user profile data
+    res.json({
+      _id: user._id,
+      fullName: user.fullname,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt
+    });
+
+  } catch (err) {
+    console.error('Error fetching customer profile:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// ===========================
+// UPDATE Customer Profile by ID
+// ===========================
+router.put("/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { fullName, email, phone, otp } = req.body;
+    const moment = require('moment');
+
+    // Validate input
+    if (!fullName || !email || !phone) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if email is being changed
+    if (email !== user.email) {
+      // Require OTP for email change
+      if (!otp) {
+        return res.status(400).json({ 
+          message: "OTP is required to change email.",
+          requiresOTP: true
+        });
+      }
+
+      // Verify OTP
+      if (user.verificationCode !== otp) {
+        return res.status(401).json({ 
+          message: "Invalid OTP.",
+          requiresOTP: true
+        });
+      }
+
+      if (moment().isAfter(moment(user.verificationCodeExpires))) {
+        return res.status(401).json({ 
+          message: "OTP has expired. Please request a new one.",
+          requiresOTP: true
+        });
+      }
+
+      // Check if email is already taken by another user
+      const emailExists = await User.findOne({ email, _id: { $ne: userId } });
+      if (emailExists) {
+        return res.status(400).json({ message: "Email already in use by another account" });
+      }
+
+      // Clear OTP after verification
+      user.verificationCode = undefined;
+      user.verificationCodeExpires = undefined;
+    }
+
+    // Check if phone is being changed and if it's already taken by another user
+    if (phone !== user.phone) {
+      const phoneExists = await User.findOne({ phone, _id: { $ne: userId } });
+      if (phoneExists) {
+        return res.status(400).json({ message: "Phone number already in use by another account" });
+      }
+    }
+
+    // Update user fields
+    user.fullname = fullName;
+    user.email = email;
+    user.phone = phone;
+
+    await user.save();
+
+    // Return updated profile
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        _id: user._id,
+        fullName: user.fullname,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        isVerified: user.isVerified
+      }
+    });
+
+  } catch (err) {
+    console.error('Error updating customer profile:', err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+module.exports = router;

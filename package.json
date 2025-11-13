@@ -8,5 +8,13 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hellar2/DRY_CLEANING_2.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Hellar2/DRY_CLEANING_2/issues"
+  },
+  "homepage": "https://github.com/Hellar2/DRY_CLEANING_2#readme"
 }

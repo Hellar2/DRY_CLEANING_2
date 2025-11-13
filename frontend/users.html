@@ -25,7 +25,10 @@
       </header>
 
       <section class="table-section">
-        <input type="text" id="userSearch" placeholder="Search users">
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="userSearch" placeholder="Search users" style="padding: 8px; width: 300px;">
+          <button id="addUserBtn" style="float: right; padding: 8px 16px; background: #16a34a; color: white; border: none; border-radius: 5px; cursor: pointer;">+ Add User</button>
+        </div>
         <table>
           <thead>
             <tr>
@@ -34,6 +37,7 @@
               <th>Email</th>
               <th>Phone</th>
               <th>Role</th>
+              <th>Verified</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -50,30 +54,57 @@
 
     async function fetchUsers() {
       try {
-        const res = await fetch('http://localhost:5002/api/admin/users');
-        users = await res.json();
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Please login first');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const res = await fetch('http://localhost:5002/api/admin/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            alert('Unauthorized. Please login as admin.');
+            window.location.href = 'login.html';
+            return;
+          }
+          throw new Error('Failed to fetch users');
+        }
+
+        const data = await res.json();
+        console.log('Users data:', data);
+        users = data.users || data;
         renderTable(users);
-      } catch(err) { console.error(err); }
+      } catch(err) { 
+        console.error('Error fetching users:', err);
+        alert('Error loading users');
+      }
     }
 
     function renderTable(data) {
       usersTable.innerHTML = '';
-      if(!data.length) {
-        usersTable.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
+      if(!data || !data.length) {
+        usersTable.innerHTML = '<tr><td colspan="7">No users found</td></tr>';
         return;
       }
-      data.forEach(user => {
+      data.forEach((user, index) => {
         const row = document.createElement('tr');
         row.dataset.id = user._id;
         row.innerHTML = `
-          <td>${user._id}</td>
+          <td>${index + 1}</td>
           <td>${user.fullname}</td>
           <td>${user.email}</td>
           <td>${user.phone}</td>
-          <td>${user.role}</td>
+          <td><span style="padding: 4px 8px; background: ${user.role === 'Admin' ? '#dc2626' : user.role === 'Staff' ? '#2563eb' : '#16a34a'}; color: white; border-radius: 4px; font-size: 12px;">${user.role}</span></td>
+          <td>${user.isVerified ? '✅' : '❌'}</td>
           <td>
-            <button class="edit">Edit</button>
-            <button class="delete">Delete</button>
+            <button class="edit" style="padding: 5px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">Edit Role</button>
+            <button class="delete" style="padding: 5px 10px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
           </td>
         `;
         usersTable.appendChild(row);
@@ -84,15 +115,58 @@
       const row = e.target.closest('tr');
       if(!row) return;
       const id = row.dataset.id;
+      const token = localStorage.getItem('authToken');
+
       if(e.target.classList.contains('delete')) {
-        if(confirm("Delete this user?")) {
-          await fetch(`http://localhost:5002/api/admin/users/${id}`, { method:'DELETE' });
-          fetchUsers();
+        if(confirm("Delete this user? This action cannot be undone.")) {
+          try {
+            const res = await fetch(`http://localhost:5002/api/admin/users/${id}`, { 
+              method:'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              alert('User deleted successfully');
+              fetchUsers();
+            } else {
+              alert('Failed to delete user');
+            }
+          } catch(err) {
+            console.error(err);
+            alert('Error deleting user');
+          }
         }
       }
       if(e.target.classList.contains('edit')) {
-        alert(`Edit user ID: ${id}`);
+        const newRole = prompt("Enter new role (Admin/Staff/Customer):");
+        if (newRole && ['Admin', 'Staff', 'Customer'].includes(newRole)) {
+          try {
+            const res = await fetch(`http://localhost:5002/api/admin/users/${id}/role`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ role: newRole })
+            });
+            if (res.ok) {
+              alert('User role updated successfully');
+              fetchUsers();
+            } else {
+              alert('Failed to update role');
+            }
+          } catch(err) {
+            console.error(err);
+            alert('Error updating role');
+          }
+        } else if (newRole) {
+          alert('Invalid role. Please enter Admin, Staff, or Customer.');
+        }
       }
+    });
+
+    document.getElementById('addUserBtn').addEventListener('click', () => {
+      alert('Add user functionality - Create a modal or form to add new users');
+      // You can implement a modal form here
     });
 
     userSearch.addEventListener('input', e=>{

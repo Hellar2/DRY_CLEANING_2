@@ -34,10 +34,16 @@
         <div class="card">
           <h3>Total Users</h3>
           <p id="totalUsers">0</p>
+          <small>Customers: <span id="totalCustomers">0</span> | Staff: <span id="totalStaff">0</span></small>
         </div>
         <div class="card">
-          <h3>Active Orders</h3>
-          <p id="activeOrders">0</p>
+          <h3>Total Orders</h3>
+          <p id="totalOrders">0</p>
+          <small>Pending: <span id="pendingOrders">0</span> | Completed: <span id="completedOrders">0</span></small>
+        </div>
+        <div class="card">
+          <h3>Total Revenue</h3>
+          <p id="totalRevenue">KSH 0</p>
         </div>
       </section>
     </main>
@@ -47,12 +53,42 @@
     // Fetch Dashboard stats
     async function loadDashboardStats() {
       try {
-        const res = await fetch('http://localhost:5002/api/admin/dashboard');
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          alert('Please login first');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const res = await fetch('http://localhost:5002/api/admin/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            alert('Unauthorized. Please login as admin.');
+            window.location.href = 'login.html';
+            return;
+          }
+          throw new Error('Failed to fetch stats');
+        }
+
         const stats = await res.json();
-        document.getElementById('totalUsers').textContent = stats.totalUsers;
-        document.getElementById('activeOrders').textContent = stats.activeOrders;
+        console.log('Dashboard stats:', stats);
+        
+        // Update UI with stats
+        document.getElementById('totalUsers').textContent = stats.users.total;
+        document.getElementById('totalCustomers').textContent = stats.users.customers;
+        document.getElementById('totalStaff').textContent = stats.users.staff;
+        document.getElementById('totalOrders').textContent = stats.orders.total;
+        document.getElementById('pendingOrders').textContent = stats.orders.pending;
+        document.getElementById('completedOrders').textContent = stats.orders.completed;
+        document.getElementById('totalRevenue').textContent = `KSH ${stats.revenue.total.toLocaleString()}`;
       } catch(err) {
-        console.error(err);
+        console.error('Error loading dashboard:', err);
+        alert('Error loading dashboard data');
       }
     }
 

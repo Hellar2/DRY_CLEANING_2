@@ -31,21 +31,104 @@
       </header>
 
       <section class="settings-section">
-        <h2>Site Settings</h2>
-        <form id="settingsForm">
-          <label for="siteName">Site Name:</label>
-          <input type="text" id="siteName" name="siteName" required>
+        <!-- System Settings -->
+        <div class="settings-card" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="margin-top: 0; color: #1f2937;">🏢 System Settings</h2>
+          <form id="settingsForm">
+            <div style="margin-bottom: 15px;">
+              <label for="siteName" style="display: block; margin-bottom: 5px; font-weight: 600;">Site Name:</label>
+              <input type="text" id="siteName" name="siteName" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+            </div>
 
-          <label for="adminEmail">Admin Email:</label>
-          <input type="email" id="adminEmail" name="adminEmail" required>
+            <div style="margin-bottom: 15px;">
+              <label for="adminEmail" style="display: block; margin-bottom: 5px; font-weight: 600;">Admin Email:</label>
+              <input type="email" id="adminEmail" name="adminEmail" required style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+            </div>
 
-          <button type="submit">Update Settings</button>
-        </form>
+            <button type="submit" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Update Settings</button>
+          </form>
+        </div>
+
+        <!-- User Management Quick Actions -->
+        <div class="settings-card" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="margin-top: 0; color: #1f2937;">👥 User Management</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Total Users</h4>
+              <p id="statsUsers" style="font-size: 24px; font-weight: bold; margin: 0; color: #2563eb;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Admins</h4>
+              <p id="statsAdmins" style="font-size: 24px; font-weight: bold; margin: 0; color: #dc2626;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Staff</h4>
+              <p id="statsStaff" style="font-size: 24px; font-weight: bold; margin: 0; color: #2563eb;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Customers</h4>
+              <p id="statsCustomers" style="font-size: 24px; font-weight: bold; margin: 0; color: #16a34a;">0</p>
+            </div>
+          </div>
+          <button onclick="window.location.href='users.html'" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Manage Users →</button>
+        </div>
+
+        <!-- Order Statistics -->
+        <div class="settings-card" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="margin-top: 0; color: #1f2937;">📦 Order Statistics</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Total Orders</h4>
+              <p id="statsOrdersTotal" style="font-size: 24px; font-weight: bold; margin: 0; color: #2563eb;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Pending</h4>
+              <p id="statsOrdersPending" style="font-size: 24px; font-weight: bold; margin: 0; color: #f59e0b;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">In Progress</h4>
+              <p id="statsOrdersProgress" style="font-size: 24px; font-weight: bold; margin: 0; color: #3b82f6;">0</p>
+            </div>
+            <div style="padding: 15px; background: #f3f4f6; border-radius: 6px;">
+              <h4 style="margin: 0 0 10px 0;">Completed</h4>
+              <p id="statsOrdersCompleted" style="font-size: 24px; font-weight: bold; margin: 0; color: #10b981;">0</p>
+            </div>
+          </div>
+          <button onclick="window.location.href='adminOrders.html'" style="margin-top: 15px; padding: 10px 20px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Manage Orders →</button>
+        </div>
+
+        <!-- System Actions -->
+        <div class="settings-card" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="margin-top: 0; color: #1f2937;">⚙️ System Actions</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button id="refreshStatsBtn" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">🔄 Refresh Statistics</button>
+            <button id="exportDataBtn" style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">📥 Export Data</button>
+            <button id="viewLogsBtn" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">📋 View Logs</button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-card" style="background: #fef2f2; padding: 20px; border-radius: 8px; border: 2px solid #fecaca; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="margin-top: 0; color: #dc2626;">⚠️ Danger Zone</h2>
+          <p style="color: #991b1b; margin-bottom: 15px;">These actions are irreversible. Use with caution.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button id="clearCacheBtn" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">🗑️ Clear Cache</button>
+            <button id="resetSettingsBtn" style="padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">🔄 Reset Settings</button>
+          </div>
+        </div>
       </section>
     </main>
   </div>
 
   <script>
+    const token = localStorage.getItem('authToken');
+
+    // Check authentication
+    if (!token) {
+      alert('Please login first');
+      window.location.href = 'login.html';
+    }
+
     // Sidebar active link highlight
     const links = document.querySelectorAll('.sidebar .nav-links a');
     links.forEach(link => {
@@ -57,7 +140,7 @@
 
     // Logout
     document.getElementById("logout").addEventListener("click", () => {
-      // optionally clear localStorage/sessionStorage if using auth
+      localStorage.removeItem('authToken');
       window.location.href = "login.html";
     });
 
@@ -66,7 +149,10 @@
     // Fetch current settings from backend
     async function loadSettings() {
       try {
-        const res = await fetch("http://localhost:5002/api/admin/settings");
+        const res = await fetch("http://localhost:5002/api/admin/settings", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch settings');
         const data = await res.json();
         if (data.siteName) document.getElementById("siteName").value = data.siteName;
         if (data.adminEmail) document.getElementById("adminEmail").value = data.adminEmail;
@@ -75,7 +161,33 @@
       }
     }
 
+    // Fetch dashboard statistics
+    async function loadStatistics() {
+      try {
+        const res = await fetch("http://localhost:5002/api/admin/dashboard", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        const stats = await res.json();
+        
+        // Update user stats
+        document.getElementById('statsUsers').textContent = stats.users.total;
+        document.getElementById('statsAdmins').textContent = stats.users.admins;
+        document.getElementById('statsStaff').textContent = stats.users.staff;
+        document.getElementById('statsCustomers').textContent = stats.users.customers;
+        
+        // Update order stats
+        document.getElementById('statsOrdersTotal').textContent = stats.orders.total;
+        document.getElementById('statsOrdersPending').textContent = stats.orders.pending;
+        document.getElementById('statsOrdersProgress').textContent = stats.orders.inProgress;
+        document.getElementById('statsOrdersCompleted').textContent = stats.orders.completed;
+      } catch (err) {
+        console.error("Error fetching statistics:", err);
+      }
+    }
+
     loadSettings();
+    loadStatistics();
 
     // Update settings
     form.addEventListener("submit", async (e) => {
@@ -86,14 +198,71 @@
       try {
         const res = await fetch("http://localhost:5002/api/admin/settings", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ siteName, adminEmail })
         });
+        if (!res.ok) throw new Error('Failed to update settings');
         const data = await res.json();
-        alert("Settings updated successfully!");
+        alert("✅ Settings updated successfully!");
       } catch (err) {
         console.error("Error updating settings:", err);
-        alert("Failed to update settings.");
+        alert("❌ Failed to update settings.");
+      }
+    });
+
+    // System Actions
+    document.getElementById('refreshStatsBtn').addEventListener('click', () => {
+      loadStatistics();
+      alert('✅ Statistics refreshed!');
+    });
+
+    document.getElementById('exportDataBtn').addEventListener('click', async () => {
+      try {
+        alert('📥 Export functionality - This would download users and orders data as CSV/JSON');
+        // Implement actual export logic here
+      } catch (err) {
+        console.error(err);
+        alert('❌ Export failed');
+      }
+    });
+
+    document.getElementById('viewLogsBtn').addEventListener('click', () => {
+      alert('📋 View Logs - This would show system logs and activity history');
+      // Implement logs viewer
+    });
+
+    // Danger Zone Actions
+    document.getElementById('clearCacheBtn').addEventListener('click', () => {
+      if (confirm('⚠️ Are you sure you want to clear the cache?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('✅ Cache cleared! You will be logged out.');
+        window.location.href = 'login.html';
+      }
+    });
+
+    document.getElementById('resetSettingsBtn').addEventListener('click', async () => {
+      if (confirm('⚠️ Are you sure you want to reset all settings to default? This cannot be undone!')) {
+        try {
+          const res = await fetch("http://localhost:5002/api/admin/settings", {
+            method: "PUT",
+            headers: { 
+              "Content-Type": "application/json",
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ siteName: 'DryClean Pro', adminEmail: 'admin@dryclean.com' })
+          });
+          if (res.ok) {
+            alert('✅ Settings reset to default!');
+            loadSettings();
+          }
+        } catch (err) {
+          console.error(err);
+          alert('❌ Failed to reset settings');
+        }
       }
     });
   </script>

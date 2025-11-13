@@ -24,6 +24,41 @@
       cursor: not-allowed;
       transform: none;
     }
+    
+    /* Password toggle styles */
+    .password-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-container input {
+      width: 100%;
+      padding-right: 45px; /* Space for the toggle button */
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .eye-icon {
+      font-size: 16px;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -34,22 +69,16 @@
       <label for="identifier">Email or Phone</label>
       <input id="identifier" name="identifier" type="text" required />
       <label for="password">Password</label>
-      <input id="password" name="password" type="password" required />
-      <button type="submit">Login</button>
-      
-      <!-- Demo Login Section -->
-      <div style="margin: 20px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #2196F3;">
-        <p style="margin: 0 0 10px 0; font-weight: bold; color: #333;">🚀 Quick Demo Login:</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" class="demo-btn" data-role="admin" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #ff5722; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👨‍💼 Admin</button>
-          <button type="button" class="demo-btn" data-role="staff" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👥 Staff</button>
-          <button type="button" class="demo-btn" data-role="customer" style="flex: 1; min-width: 100px; padding: 8px 12px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">👤 Customer</button>
-        </div>
+      <div class="password-container">
+        <input id="password" name="password" type="password" required />
+        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+          <span class="eye-icon">👁️</span>
+        </button>
       </div>
+      <button type="submit">Login</button>
       
       <p>Don't have an account? <a href="signup.html">Register here</a></p>
       <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
-      <p><a href="credentials.html" style="color: #4CAF50;">📋 View Test Credentials</a></p>
     </form>
   </div>
 
@@ -63,7 +92,12 @@
       <input type="text" id="resetIdentifier" placeholder="Enter your email or phone" required />
 
       <label for="newPassword">New Password</label>
-      <input type="password" id="newPassword" placeholder="Enter new password" required />
+      <div class="password-container">
+        <input type="password" id="newPassword" placeholder="Enter new password" required />
+        <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">
+          <span class="eye-icon">👁️</span>
+        </button>
+      </div>
 
       <button id="resetBtn">Reset Password</button>
     </div>
@@ -160,10 +194,22 @@
           return;
          }
 
-         // Save minimal session info
+         // Save session info including auth token
+         localStorage.setItem('authToken', data.token);
          localStorage.setItem('userId', data.userId);
         localStorage.setItem('role', data.role || '');
         localStorage.setItem('fullname', data.fullname || '');
+        
+        // For staff dashboard
+        if (data.role === 'Staff') {
+          localStorage.setItem('staffUser', JSON.stringify({
+            name: data.fullname,
+            email: identifier,
+            role: data.role
+          }));
+        }
+
+        console.log('✅ Login successful:', { role: data.role, token: data.token ? 'Present' : 'Missing' });
 
         const role = (data.role || '').toLowerCase();
         if (role === 'admin' || role === 'administrator') {
@@ -230,6 +276,20 @@
         resetBtn.textContent = "Reset Password";
       }
     });
+    
+    // Toggle password visibility
+    function togglePassword(inputId) {
+      const passwordInput = document.getElementById(inputId);
+      const eyeIcon = passwordInput.nextElementSibling.querySelector('.eye-icon');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.textContent = '🙈';
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.textContent = '👁️';
+      }
+    }
   </script>
 </body>
 </html>

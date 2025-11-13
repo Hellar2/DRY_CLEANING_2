@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
@@ -43,6 +44,13 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+
+// =======================
+// Direct Routes (without /api prefix for frontend compatibility)
+// =======================
+app.use("/customer", customerRoutes);
+app.use("/staff", staffRoutes);
+app.use("/orders", orderRoutes);
 
 // =======================
 // Server Listener

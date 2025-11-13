@@ -23,6 +23,41 @@
     .settings-section input, .settings-section select { width:100%; padding:0.5rem; margin-bottom:1rem; border-radius:6px; border:1px solid #ccc; }
     .settings-section button { padding:0.5rem 1rem; background:#3b82f6; color:#fff; border:none; border-radius:6px; cursor:pointer; }
     .settings-section button:hover { background:#2563eb; }
+    
+    /* Password toggle styles */
+    .password-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-container input {
+      width: 100%;
+      padding-right: 45px; /* Space for the toggle button */
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+      background-color: #f0f0f0;
+    }
+    
+    .eye-icon {
+      font-size: 16px;
+      user-select: none;
+    }
 </style>
 </head>
 <body>
@@ -65,13 +100,28 @@
         <div class="settings-section">
             <h2>Change Password</h2>
             <label for="currentPassword">Current Password</label>
-            <input type="password" id="currentPassword" placeholder="Enter current password">
+            <div class="password-container">
+                <input type="password" id="currentPassword" placeholder="Enter current password">
+                <button type="button" class="password-toggle" onclick="togglePassword('currentPassword')">
+                    <span class="eye-icon">👁️</span>
+                </button>
+            </div>
 
             <label for="newPassword">New Password</label>
-            <input type="password" id="newPassword" placeholder="Enter new password">
+            <div class="password-container">
+                <input type="password" id="newPassword" placeholder="Enter new password">
+                <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">
+                    <span class="eye-icon">👁️</span>
+                </button>
+            </div>
 
             <label for="confirmPassword">Confirm New Password</label>
-            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+            <div class="password-container">
+                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                    <span class="eye-icon">👁️</span>
+                </button>
+            </div>
 
             <button onclick="changePassword()">Change Password</button>
         </div>
@@ -134,6 +184,20 @@ function updateNotifications() {
 }
 
 document.addEventListener('DOMContentLoaded', loadSettings);
+
+// Toggle password visibility
+function togglePassword(inputId) {
+  const passwordInput = document.getElementById(inputId);
+  const eyeIcon = passwordInput.nextElementSibling.querySelector('.eye-icon');
+  
+  if (passwordInput.type === 'password') {
+    passwordInput.type = 'text';
+    eyeIcon.textContent = '🙈';
+  } else {
+    passwordInput.type = 'password';
+    eyeIcon.textContent = '👁️';
+  }
+}
 </script>
 </body>
 </html>

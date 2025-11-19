@@ -6,30 +6,12 @@
   <title>Login</title>
   <link rel="stylesheet" href="main.css" />
   <style>
-    .demo-btn {
-      transition: all 0.3s ease;
-      font-weight: 500;
-    }
-    .demo-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      opacity: 0.9;
-    }
-    .demo-btn:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .demo-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    
     /* Password toggle styles */
     .password-container {
       position: relative;
       display: flex;
       align-items: center;
+      margin-bottom: 1rem;
     }
     
     .password-container input {
@@ -48,7 +30,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s;
     }
     
     .password-toggle:hover {
@@ -58,28 +40,151 @@
     .eye-icon {
       font-size: 16px;
       user-select: none;
+      color: #666;
+    }
+
+    /* OTP Input Styles */
+    .otp-inputs {
+      display: flex;
+      justify-content: space-between;
+      margin: 1.5rem 0;
+      gap: 10px;
+    }
+
+    .otp-inputs input {
+      width: 60px;
+      height: 60px;
+      text-align: center;
+      font-size: 24px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.3s;
+    }
+
+    .otp-inputs input:focus {
+      border-color: #4a90e2;
+      outline: none;
+    }
+
+    .otp-timer {
+      text-align: center;
+      margin: 1rem 0;
+      color: #666;
+    }
+
+    .otp-timer a {
+      color: #4a90e2;
+      text-decoration: none;
+    }
+
+    .otp-timer a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: background-color 0.3s;
+    }
+
+    .btn-primary:hover {
+      background-color: #357abd;
+    }
+
+    .btn-primary:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background-color: #f5f5f5;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: all 0.3s;
+    }
+
+    .btn-secondary:hover {
+      background-color: #e0e0e0;
+    }
+
+    .error-message {
+      color: #e74c3c;
+      margin: 10px 0;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Login</h2>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <a href="../index.html" style="color: #667eea; text-decoration: none; font-size: 14px;">
+        <i class="fas fa-arrow-left"></i> Back to Home
+      </a>
+    </div>
+    <h1>Login</h1>
 
-    <form id="loginForm">
-      <label for="identifier">Email or Phone</label>
-      <input id="identifier" name="identifier" type="text" required />
-      <label for="password">Password</label>
+    <!-- Step 1: Email/Phone Form -->
+    <form id="loginForm" style="display: block;">
+      <label>Email </label>
+      <input type="text" id="identifier" placeholder="Enter email or phone" required />
+
       <div class="password-container">
-        <input id="password" name="password" type="password" required />
+        <label>Password </label>
+        <input type="password" id="password" placeholder="Enter password" required />
         <button type="button" class="password-toggle" onclick="togglePassword('password')">
           <span class="eye-icon">👁️</span>
         </button>
       </div>
-      <button type="submit">Login</button>
+
+      <button type="submit" id="loginBtn" class="btn-primary">Continue</button>
       
-      <p>Don't have an account? <a href="signup.html">Register here</a></p>
-      <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
+      <div class="auth-options" style="margin-top: 20px; text-align: center;">
+        <p style="margin: 10px 0;">
+          <a href="signup.html" style="color: #4a6cf7; text-decoration: none; font-weight: 500;">Create Account</a>
+          <span style="margin: 0 10px; color: #666;">|</span>
+          <a href="#" id="forgotPasswordLink" style="color: #4a6cf7; text-decoration: none; font-weight: 500;">Forgot Password?</a>
+        </p>
+      </div>
     </form>
+
+    <!-- Step 2: OTP Verification -->
+    <div id="otpSection" style="display: none;">
+      <h2>Verify Your Identity</h2>
+      <p class="subtitle">We've sent a 4-digit code to <span id="otpEmail"></span></p>
+      
+      <form id="otpForm">
+        <label>Verification Code</label>
+        <div class="otp-inputs">
+          <input type="text" id="otp1" maxlength="1" pattern="\d*" inputmode="numeric" required />
+          <input type="text" id="otp2" maxlength="1" pattern="\d*" inputmode="numeric" required />
+          <input type="text" id="otp3" maxlength="1" pattern="\d*" inputmode="numeric" required />
+          <input type="text" id="otp4" maxlength="1" pattern="\d*" inputmode="numeric" required />
+        </div>
+        
+        <div class="otp-timer">
+          <span id="resendOtp" style="display: none;">
+            Didn't receive a code? <a href="#" id="resendOtpLink">Resend OTP</a>
+          </span>
+          <span id="otpTimer">Resend in <span id="countdown">60</span>s</span>
+        </div>
+        
+        <button type="submit" id="verifyOtpBtn" class="btn-primary">Verify & Continue</button>
+        <button type="button" id="backToLogin" class="btn-secondary">Back to Login</button>
+      </form>
+    </div>
   </div>
 
   <!-- ===== Forgot Password Modal ===== -->
@@ -88,8 +193,8 @@
       <span id="closeModal" class="close">&times;</span>
       <h2>Reset Password</h2>
 
-      <label for="resetIdentifier">Email or Phone</label>
-      <input type="text" id="resetIdentifier" placeholder="Enter your email or phone" required />
+      <label for="resetIdentifier">Email</label>
+      <input type="email" id="resetIdentifier" placeholder="Enter your email" required />
 
       <label for="newPassword">New Password</label>
       <div class="password-container">
@@ -105,126 +210,71 @@
 
   <script>
     // Set backend base URL
-    const API_BASE = 'http://localhost:5002';
+    const API_BASE = 'http://localhost:5002/api';
     
-    // Demo account credentials (hardcoded)
-    const DEMO_ACCOUNTS = {
-      admin: {
-        identifier: 'admin@dryclean.com',
-        password: 'admin123'
-      },
-      staff: {
-        identifier: 'staff@dryclean.com',
-        password: 'staff123'
-      },
-      customer: {
-        identifier: 'customer@dryclean.com',
-        password: 'customer123'
-      }
-    };
-
-    // Demo login button handlers
-    document.querySelectorAll('.demo-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const role = e.target.dataset.role;
-        const credentials = DEMO_ACCOUNTS[role];
-        
-        if (!credentials) {
-          alert('Demo account not configured');
-          return;
-        }
-        
-        // Fill in the form fields
-        document.getElementById('identifier').value = credentials.identifier;
-        document.getElementById('password').value = credentials.password;
-        
-        // Show loading state
-        e.target.disabled = true;
-        e.target.textContent = 'Logging in...';
-        
-        // Perform login
-        await performLogin(credentials.identifier, credentials.password);
-        
-        // Reset button
-        e.target.disabled = false;
-        e.target.textContent = e.target.textContent.replace('Logging in...', role.charAt(0).toUpperCase() + role.slice(1));
-      });
-    });
     
-    const form = document.getElementById('loginForm');
-    form.addEventListener('submit', async (e) => {
+    // Handle login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const identifier = document.getElementById('identifier').value.trim();
-      const password = document.getElementById('password').value;
       
-      await performLogin(identifier, password);
-    });
-    
-    // Shared login function
-    async function performLogin(identifier, password) {
-      if (!identifier || !password) {
-        alert("Please enter both email/phone and password");
-        return;
-      }
-
-      console.log('🔐 Attempting login with:', { identifier, passwordLength: password.length });
-
+      const identifier = document.getElementById('identifier').value.trim();
+      
+      // Show loading state
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Sending OTP...';
+      
       try {
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
+        console.log('Sending login request to:', `${API_BASE}/auth/login/initiate`);
+        console.log('Request payload:', { identifier });
+        
+        const response = await fetch(`${API_BASE}/auth/login/initiate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier, password })
+          body: JSON.stringify({ identifier })
         });
-
-        // Safely parse JSON only if response has JSON content-type
-        const contentType = res.headers.get('content-type') || '';
-        let data = null;
-        if (contentType.includes('application/json')) {
-          data = await res.json();
-        } else {
-          const text = await res.text();
-          // try to parse text as JSON fallback
-          try { data = text ? JSON.parse(text) : null; } catch (e) { data = { message: text || 'Unexpected response' }; }
-        }
-
-         if (!res.ok) {
-          const msg = data?.message || `Login failed (HTTP ${res.status}). Make sure the backend is running on port 5002.`;
-          alert(msg);
-          console.error('Login failed:', { status: res.status, data });
-          return;
-         }
-
-         // Save session info including auth token
-         localStorage.setItem('authToken', data.token);
-         localStorage.setItem('userId', data.userId);
-        localStorage.setItem('role', data.role || '');
-        localStorage.setItem('fullname', data.fullname || '');
         
-        // For staff dashboard
-        if (data.role === 'Staff') {
-          localStorage.setItem('staffUser', JSON.stringify({
-            name: data.fullname,
-            email: identifier,
-            role: data.role
-          }));
-        }
-
-        console.log('✅ Login successful:', { role: data.role, token: data.token ? 'Present' : 'Missing' });
-
-        const role = (data.role || '').toLowerCase();
-        if (role === 'admin' || role === 'administrator') {
-          // Use relative paths so files under the `frontend/` folder resolve correctly
-          window.location.href = './admindashboard.html';
-        } else if (role === 'staff') {
-          window.location.href = './staff-Dashboard.html';
+        console.log('Response status:', response.status);
+        
+        // Check if response is JSON before parsing
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+          console.log('Response data:', data);
         } else {
-          window.location.href = './cdashboard.html';
+          const text = await response.text();
+          console.log('Non-JSON response:', text);
+          throw new Error('Server returned non-JSON response');
         }
-      } catch (err) {
-        console.error('Login fetch error', err);
-        alert('Network error during login');
+        
+        if (!response.ok) {
+          throw new Error(data.message || `Server returned ${response.status}`);
+        }
+        
+        // Save session data
+        loginSession = {
+          userId: data.userId,
+          email: data.email || identifier // Use the email from response or the identifier
+        };
+        
+        // Show OTP section
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('otpSection').style.display = 'block';
+        document.getElementById('otpEmail').textContent = data.email || identifier;
+        
+        // Start resend timer
+        startResendTimer();
+        
+      } catch (error) {
+        alert(error.message || 'Failed to send OTP. Please try again.');
+        console.error('OTP send error:', error);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Continue';
       }
-    }
+    });
 
     // ===== FORGOT PASSWORD MODAL =====
     const modal = document.getElementById("forgotModal");
@@ -232,9 +282,20 @@
     const closeModal = document.getElementById("closeModal");
     const resetBtn = document.getElementById("resetBtn");
 
-    openModal.onclick = (e) => { e.preventDefault(); modal.style.display = "block"; };
-    closeModal.onclick = () => modal.style.display = "none";
-    window.onclick = (event) => { if (event.target === modal) modal.style.display = "none"; };
+    if (openModal) {
+      openModal.onclick = (e) => { 
+        e.preventDefault(); 
+        modal.style.display = "block"; 
+      };
+    }
+    
+    if (closeModal) {
+      closeModal.onclick = () => modal.style.display = "none";
+    }
+    
+    window.onclick = (event) => { 
+      if (event.target === modal) modal.style.display = "none"; 
+    };
 
     // ===== RESET PASSWORD FUNCTION =====
     resetBtn.addEventListener("click", async () => {
@@ -290,6 +351,212 @@
         eyeIcon.textContent = '👁️';
       }
     }
+
+    // OTP Verification Logic
+    let loginSession = null;
+    let resendTimer = null;
+
+    // Handle OTP input navigation
+    const otpInputs = document.querySelectorAll('.otp-inputs input');
+    otpInputs.forEach((input, index) => {
+      // Allow only numeric input
+      input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '');
+        
+        // Move to next input on number input
+        if (e.target.value && index < otpInputs.length - 1) {
+          otpInputs[index + 1].focus();
+        }
+      });
+
+      // Handle backspace
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+          otpInputs[index - 1].focus();
+        }
+      });
+    });
+
+
+    // Handle OTP form submission
+    document.getElementById('otpForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!loginSession) {
+        alert('Session expired. Please try logging in again.');
+        return resetLoginForm();
+      }
+      
+      // Get OTP from inputs
+      const otp = Array.from(otpInputs).map(input => input.value).join('');
+      
+      if (otp.length !== 4) {
+        alert('Please enter a valid 4-digit OTP');
+        return;
+      }
+      
+      const verifyBtn = document.getElementById('verifyOtpBtn');
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'Verifying...';
+      
+      try {
+        // Call verify OTP endpoint
+        const response = await fetch(`${API_BASE}/auth/login/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: loginSession.userId,
+            otp: otp
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Invalid OTP');
+        }
+        
+        // Save session info
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('role', data.role || '');
+        localStorage.setItem('fullname', data.fullname || '');
+        
+        // For staff dashboard
+        if (data.role === 'Staff') {
+          localStorage.setItem('staffUser', JSON.stringify({
+            name: data.fullname,
+            email: loginSession.email,
+            role: data.role
+          }));
+        }
+        
+        // Redirect based on role
+        const role = (data.role || '').toLowerCase();
+        if (role === 'admin' || role === 'administrator') {
+          window.location.href = './admindashboard.html';
+        } else if (role === 'staff') {
+          window.location.href = './staff-Dashboard.html';
+        } else {
+          window.location.href = './cdashboard.html';
+        }
+        
+      } catch (error) {
+        alert(error.message || 'Failed to verify OTP');
+        console.error('OTP verification error:', error);
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'Verify & Continue';
+      }
+    });
+
+    // Handle resend OTP
+    document.getElementById('resendOtpLink').addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      if (!loginSession) {
+        alert('Session expired. Please try logging in again.');
+        return resetLoginForm();
+      }
+      
+      const resendLink = document.getElementById('resendOtpLink');
+      resendLink.style.pointerEvents = 'none';
+      resendLink.textContent = 'Sending...';
+      
+      try {
+        const response = await fetch(`${API_BASE}/auth/resend-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: loginSession.userId })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to resend OTP');
+        }
+        
+        alert('New OTP sent to your email');
+        startResendTimer();
+        
+      } catch (error) {
+        alert(error.message || 'Failed to resend OTP');
+        console.error('Resend OTP error:', error);
+      } finally {
+        resendLink.style.pointerEvents = 'auto';
+        resendLink.textContent = 'Resend OTP';
+      }
+    });
+
+    // Back to login button
+    document.getElementById('backToLogin').addEventListener('click', resetLoginForm);
+
+    // Start resend OTP timer
+    function startResendTimer() {
+      let timeLeft = 60;
+      const countdownEl = document.getElementById('countdown');
+      const resendOtpEl = document.getElementById('resendOtp');
+      const otpTimerEl = document.getElementById('otpTimer');
+      
+      // Reset UI
+      resendOtpEl.style.display = 'none';
+      otpTimerEl.style.display = 'inline';
+      
+      // Clear any existing timer
+      if (resendTimer) clearInterval(resendTimer);
+      
+      // Start new timer
+      resendTimer = setInterval(() => {
+        timeLeft--;
+        countdownEl.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+          clearInterval(resendTimer);
+          otpTimerEl.style.display = 'none';
+          resendOtpEl.style.display = 'inline';
+        }
+      }, 1000);
+    }
+
+    // Reset login form
+    function resetLoginForm() {
+      // Reset forms
+      document.getElementById('loginForm').reset();
+      document.getElementById('otpForm').reset();
+      
+      // Reset OTP inputs
+      otpInputs.forEach(input => input.value = '');
+      
+      // Reset UI
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('otpSection').style.display = 'none';
+      
+      // Clear timer
+      if (resendTimer) {
+        clearInterval(resendTimer);
+        resendTimer = null;
+      }
+      
+      // Reset session
+      loginSession = null;
+      
+      // Focus on identifier field
+      document.getElementById('identifier').focus();
+    }
+
+    // Initialize OTP input focus on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Clear any existing OTP timer when page loads
+      if (resendTimer) {
+        clearInterval(resendTimer);
+      }
+      
+      // Set focus to identifier field
+      const identifierInput = document.getElementById('identifier');
+      if (identifierInput) {
+        identifierInput.focus();
+      }
+    });
   </script>
 </body>
 </html>

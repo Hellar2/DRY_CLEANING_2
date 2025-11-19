@@ -6,6 +6,13 @@ const customerSchema = new mongoose.Schema({
   customerId: { type: String, unique: true }, // e.g. CUS123456
   address: { type: String },
   notes: { type: String },
+  // Account statistics
+  stats: {
+    totalOrders: { type: Number, default: 0 },
+    completedOrders: { type: Number, default: 0 },
+    activeOrders: { type: Number, default: 0 },
+    totalSpent: { type: Number, default: 0 }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

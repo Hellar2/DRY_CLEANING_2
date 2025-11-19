@@ -22,27 +22,33 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Generate a 6-digit OTP
+// Generate a 4-digit OTP
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
 // Send OTP to user's email
-const sendOTP = async (email, otp) => {
+const sendOTP = async (email, otp, type = 'verification') => {
   try {
+    const subject = type === 'login' ? 'Your Login Verification Code' : 'Your Email Verification OTP';
+    const message = type === 'login' 
+      ? 'Your login verification code is:'
+      : 'Your OTP for email verification is:';
+    const action = type === 'login' ? 'login' : 'verification';
+
     const mailOptions = {
       from: `"Dry Cleaning Service" <${process.env.EMAIL_USERNAME}>`,
       to: email,
-      subject: 'Your Email Verification OTP',
+      subject: subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Email Verification</h2>
-          <p>Your OTP for email verification is:</p>
+          <h2>${type === 'login' ? 'Login Verification' : 'Email Verification'}</h2>
+          <p>${message}</p>
           <div style="background: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 2px;">
             ${otp}
           </div>
-          <p>This OTP will expire in 10 minutes.</p>
-          <p>If you didn't request this, please ignore this email.</p>
+          <p>This verification code will expire in 10 minutes.</p>
+          <p>If you didn't request this ${action}, please ignore this email.</p>
         </div>
       `,
     };

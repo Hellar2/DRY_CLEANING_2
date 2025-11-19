@@ -90,6 +90,21 @@ exports.createCustomerOrder = async (req, res) => {
     const newOrder = await Order.create(orderData);
     console.log('✅ Order created and saved successfully:', newOrder.orderNumber);
 
+    // Update customer statistics
+    const Customer = require('../models/customer');
+    await Customer.findOneAndUpdate(
+      { userId: userId },
+      { 
+        $inc: { 
+          'stats.totalOrders': 1,
+          'stats.activeOrders': 1,
+          'stats.totalSpent': finalTotal
+        }
+      },
+      { upsert: true }
+    );
+    console.log('✅ Customer stats updated for user:', userId);
+
     res.status(201).json({
       success: true,
       message: "Order created successfully",
@@ -168,13 +183,30 @@ exports.getCustomerPayments = async (req, res) => {
 exports.getCustomerProfile = async (req, res) => {
   try {
     const { userId } = req.params;
+    const User = require('../models/User');
+    const Customer = require('../models/customer');
+    
     const user = await User.findById(userId).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "Customer not found." });
     }
 
-    res.status(200).json(user);
+    // Get customer record with stats
+    const customer = await Customer.findOne({ userId });
+    const stats = customer ? customer.stats : {
+      totalOrders: 0,
+      completedOrders: 0,
+      activeOrders: 0,
+      totalSpent: 0
+    };
+
+    const profileData = {
+      ...user.toObject(),
+      stats
+    };
+
+    res.status(200).json(profileData);
   } catch (error) {
     console.error("❌ Error fetching customer profile:", error);
     res.status(500).json({ message: "Server error while fetching customer profile." });

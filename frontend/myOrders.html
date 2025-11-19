@@ -458,6 +458,7 @@
     <nav class="sidebar">
         <h2 class="logo">DRY CLEANING</h2>
         <ul class="nav-menu">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cdashboard.html">Dashboard</a></li>
             <li class="active"><a href="myOrders.html">My Orders</a></li>
             <li><a href="profile.html">Profile</a></li>
@@ -505,8 +506,10 @@
         </div>
 
         <div class="orders-list-container">
+            <div class="orders-header">
+                <h2>My Orders</h2>
+            </div>
             <div class="orders-list-header">
-                <h2>Order History</h2>
                 <div class="sort-options">
                     <select id="sortOrders">
                         <option value="newest">Newest First</option>
@@ -588,14 +591,6 @@
                         </div>
                     </label>
                     <label class="payment-option">
-                        <input type="radio" name="paymentMethod" value="card">
-                        <span class="checkmark"></span>
-                        <div class="option-content">
-                            <strong>Card Payment</strong>
-                            <p>Pay with credit/debit card</p>
-                        </div>
-                    </label>
-                    <label class="payment-option">
                         <input type="radio" name="paymentMethod" value="cash">
                         <span class="checkmark"></span>
                         <div class="option-content">
@@ -668,7 +663,13 @@ const statusConfig = {
     'completed': { text: 'Completed', class: 'status-completed' }
 };
 
-let ordersData = { orderQueue: [], stats: { currentOrders:0, readyOrders:0, completedOrders:0, totalRevenue:0 } };
+let ordersData = {
+    userName: "",
+    stats: { currentOrders:0, readyOrders:0, totalOrders:0, completedOrders:0, totalRevenue:0 },
+    orderQueue: [],
+    activities: ["System ready - No orders yet"],
+    nextOrderId: 1001
+};
 
 function formatCurrency(amount){ return `KES ${amount.toLocaleString('en-KE')}`; }
 
@@ -681,8 +682,29 @@ function initializeOrdersPage(){
 }
 
 function loadOrdersData(){
-    const saved = localStorage.getItem('dashboardData');
-    if(saved) ordersData = JSON.parse(saved);
+    // Get user-specific data for logged-in customer
+    const userId = localStorage.getItem('userId');
+    console.log('Loading orders for userId:', userId);
+    if (!userId) {
+        console.log('No user logged in - showing empty orders');
+        return;
+    }
+    
+    const userSpecificKey = `dashboardData_${userId}`;
+    console.log('Looking for key:', userSpecificKey);
+    const saved = localStorage.getItem(userSpecificKey);
+    console.log('Found data:', saved ? 'Yes' : 'No');
+    
+    if(saved) {
+        const data = JSON.parse(saved);
+        console.log('Parsed data:', data);
+        console.log('Order queue length:', data.orderQueue?.length || 0);
+        // Use the user-specific dashboardData structure
+        ordersData = data;
+        console.log('Loaded', data.orderQueue?.length || 0, 'orders for user', userId);
+    } else {
+        console.log('No orders found for user', userId);
+    }
 }
 
 function setupEventListeners(){
@@ -716,7 +738,10 @@ function updateOrdersSummary(){
 function displayOrders(ordersToDisplay=null){
     const ordersList = document.getElementById('ordersList');
     const orders = ordersToDisplay || ordersData.orderQueue || [];
-    if(!orders.length){ ordersList.innerHTML='<div class="no-orders"><p>No orders yet.</p></div>'; return; }
+    if(!orders.length){ 
+        ordersList.innerHTML='<div class="no-orders"><p>No orders yet.</p></div>'; 
+        return; 
+    }
     const sorted = [...orders].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
     ordersList.innerHTML = sorted.map(o=>createOrderCard(o)).join('');
 }
@@ -738,9 +763,9 @@ function createOrderCard(order){
             </div>
         </div>
         <div class="order-actions">
-            ${order.status==='ready'?`<button class="action-btn pickup-btn" onclick="simulatePickup(${order.id})">Mark as Picked Up</button>`:''}
-            ${order.status==='completed' && !order.paid?`<button class="action-btn payment-btn" onclick="makePayment(${order.id})">Pay Now</button>`:''}
-            <button class="action-btn details-btn" onclick="toggleOrderDetails(${order.id})">View Details</button>
+            ${order.status==='ready'?`<button class="action-btn pickup-btn" onclick="simulatePickup('${order.id}')">Mark as Picked Up</button>`:''}
+            ${(!order.paid || order.paymentStatus === 'pending' || order.paymentStatus === 'Pending')?`<button class="action-btn payment-btn" onclick="makePayment('${order.id}')">Pay Now</button>`:''}
+            <button class="action-btn details-btn" onclick="toggleOrderDetails('${order.id}')">View Details</button>
         </div>
         <div class="order-details" id="details-${order.id}">
             <strong>Items:</strong><br>
@@ -775,13 +800,21 @@ function sortOrders(sortBy){
 }
 
 function simulatePickup(orderId){
+    // Get user-specific key
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
     const idx = ordersData.orderQueue.findIndex(o=>o.id===orderId);
     if(idx!==-1){
         ordersData.orderQueue[idx].status='completed';
         ordersData.orderQueue[idx].paid = false;
         ordersData.stats.readyOrders--;
         ordersData.stats.completedOrders++;
-        localStorage.setItem('dashboardData', JSON.stringify(ordersData));
+        
+        // Save to user-specific localStorage
+        const userSpecificKey = `dashboardData_${userId}`;
+        localStorage.setItem(userSpecificKey, JSON.stringify(ordersData));
+        
         updateOrdersSummary(); displayOrders();
         alert(`Order #${orderId} marked as picked up!`);
     }
@@ -893,7 +926,7 @@ async function processPayment(orderId, amount, method) {
         
         if (response.ok && result.success) {
             // Payment successful
-            showPaymentSuccess(orderId, amount);
+            showPaymentSuccess(orderId, amount, method);
             
             // Update local order data
             const orderIndex = ordersData.orderQueue.findIndex(o=>o.id===orderId);
@@ -901,14 +934,25 @@ async function processPayment(orderId, amount, method) {
                 ordersData.orderQueue[orderIndex].paid = true;
                 ordersData.orderQueue[orderIndex].paymentMethod = method;
                 ordersData.orderQueue[orderIndex].paymentStatus = 'paid';
-                localStorage.setItem('dashboardData', JSON.stringify(ordersData));
+                
+                // Save to user-specific localStorage
+                const userId = localStorage.getItem('userId');
+                if (userId) {
+                    const userSpecificKey = `dashboardData_${userId}`;
+                    localStorage.setItem(userSpecificKey, JSON.stringify(ordersData));
+                }
+                
                 updateOrdersSummary();
                 displayOrders();
             }
             
         } else {
-            // Payment failed
-            showPaymentFailed(result.message || 'Payment processing failed');
+            // Payment failed or pending
+            if (method === 'cash') {
+                showCashConfirmation(orderId, amount);
+            } else {
+                showPaymentFailed(result.message || 'Payment processing failed');
+            }
         }
         
     } catch (error) {
@@ -917,11 +961,49 @@ async function processPayment(orderId, amount, method) {
     }
 }
 
-function showPaymentSuccess(orderId, amount) {
+function showPaymentSuccess(orderId, amount, method) {
     document.getElementById('confirmationIcon').textContent = '✅';
-    document.getElementById('confirmationTitle').textContent = 'Payment Successful!';
+    if (method === 'cash') {
+        document.getElementById('confirmationTitle').textContent = 'Cash on Pickup Confirmed!';
+        document.getElementById('confirmationMessage').textContent = 
+            `You will pay ${formatCurrency(amount)} when picking up your order. Thank you for choosing Dry Cleaning 2!`;
+    } else {
+        document.getElementById('confirmationTitle').textContent = 'Payment Successful!';
+        document.getElementById('confirmationMessage').textContent = 
+            `Your payment has been processed successfully. Thank you for choosing Dry Cleaning 2!`;
+    }
+    document.getElementById('confirmationBtn').style.display = 'block';
+}
+
+function showCashConfirmation(orderId, amount) {
+    document.getElementById('confirmationIcon').textContent = '💵';
+    document.getElementById('confirmationTitle').textContent = 'Cash on Pickup';
     document.getElementById('confirmationMessage').textContent = 
-        `Your payment has been processed successfully. Thank you for choosing Dry Cleaning 2!`;
+        `You will pay ${formatCurrency(amount)} when you pick up your order.`;
+    
+    // Update payment details to show cash info
+    const paymentDetails = document.getElementById('paymentDetails');
+    paymentDetails.innerHTML = `
+        <div class="summary-row">
+            <strong>Order:</strong>
+            <span>#${orderId}</span>
+        </div>
+        <div class="summary-row">
+            <strong>Amount:</strong>
+            <span>${formatCurrency(amount)}</span>
+        </div>
+        <div class="summary-row">
+            <strong>Payment Method:</strong>
+            <span>Cash on Pickup</span>
+        </div>
+        <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #4CAF50;">
+            <p style="margin: 0; font-size: 14px; color: #333;">
+                <strong>Instructions:</strong><br>
+                Please have the exact amount ready when you come to collect your order.
+            </p>
+        </div>
+    `;
+    
     document.getElementById('confirmationBtn').style.display = 'block';
 }
 
@@ -998,7 +1080,12 @@ function toggleOrderDetails(orderId){
 
 function startLiveSync(){
     setInterval(()=>{
-        const latestData = localStorage.getItem('dashboardData');
+        // Get user-specific data
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+        
+        const userSpecificKey = `dashboardData_${userId}`;
+        const latestData = localStorage.getItem(userSpecificKey);
         if(latestData){
             const parsed = JSON.parse(latestData);
             if(JSON.stringify(parsed.orderQueue) !== JSON.stringify(ordersData.orderQueue)){

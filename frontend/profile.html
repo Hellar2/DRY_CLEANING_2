@@ -224,6 +224,150 @@
         color: white;
     }
 
+    /* Orders List Styles */
+    .order-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .order-number {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .order-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-received { background: #f59e0b; color: white; }
+    .status-in-progress { background: #3b82f6; color: white; }
+    .status-ready { background: #10b981; color: white; }
+    .status-completed { background: #6b7280; color: white; }
+
+    .order-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .order-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .order-detail-label {
+        font-size: 12px;
+        color: #7f8c8d;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .order-detail-value {
+        font-size: 14px;
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .order-items {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .order-items h4 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: #2c3e50;
+    }
+
+    .item-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .item-list li {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 13px;
+    }
+
+    .item-list li:last-child {
+        border-bottom: none;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .order-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a6fd8;
+    }
+
+    .btn-success {
+        background: #27ae60;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #229954;
+    }
+
+    .no-orders {
+        text-align: center;
+        color: #7f8c8d;
+        padding: 40px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-style: italic;
+    }
+
     @media (max-width: 768px) {
         .profile-body {
             padding: 25px;
@@ -240,6 +384,7 @@
     <nav class="sidebar">
         <h2 class="logo">DRY CLEANING</h2>
         <ul class="nav-menu">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cdashboard.html">Dashboard</a></li>
             <li><a href="myOrders.html">My Orders</a></li>
             <li class="active"><a href="profile.html">Profile</a></li>
@@ -258,8 +403,8 @@
             <div class="profile-card">
                 <!-- Profile Header -->
                 <div class="profile-header">
-                    <div class="profile-avatar" id="profileAvatar">
-                        <span id="avatarInitials">?</span>
+                    <div class="profile-avatar" id="profileAvatar" style="display: flex; align-items: center; justify-content: center; background: #4a6cf7; color: white; font-size: 48px; font-weight: bold;">
+                        <span id="avatarInitials"></span>
                     </div>
                     <div class="profile-name" id="profileDisplayName">Loading...</div>
                     <div class="profile-role" id="profileDisplayRole">Customer</div>
@@ -347,6 +492,14 @@ let currentProfile = {};
 // Load profile from backend
 async function loadProfile() {
     try {
+        // Get userId from localStorage
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            console.error('No user ID found, redirecting to login');
+            window.location.href = 'login.html';
+            return;
+        }
+        
         console.log('Loading profile for userId:', userId);
         const res = await fetch(`${API_BASE}/api/customer/${userId}`);
         
@@ -358,43 +511,61 @@ async function loadProfile() {
         const data = await res.json();
         console.log('Profile data loaded:', data);
 
+        // Get user data from response
+        const userData = data.user || data;
+
         // Store current profile data
         currentProfile = {
-            fullName: data.fullName,
-            email: data.email,
-            phone: data.phone
+            fullName: userData.fullName,
+            email: userData.email,
+            phone: userData.phone
         };
 
-        // Update avatar initials
-        const initials = getInitials(data.fullName);
+        // Update header with user information
+        const displayName = userData.fullName || (userData.email ? userData.email.split('@')[0] : 'Customer');
+        document.getElementById('profileDisplayName').textContent = displayName;
+        document.getElementById('profileDisplayRole').textContent = userData.role || 'Customer';
+        
+        // Set profile avatar initial (first letter of the display name)
+        const initials = displayName ? displayName.charAt(0).toUpperCase() : 'U';
         document.getElementById('avatarInitials').textContent = initials;
-
-        // Update header
-        document.getElementById('profileDisplayName').textContent = data.fullName || 'N/A';
-        document.getElementById('profileDisplayRole').textContent = data.role || 'Customer';
 
         // Update verification badge
         const badgeDiv = document.getElementById('verificationBadge');
-        if (data.isVerified) {
+        if (userData.isVerified) {
             badgeDiv.innerHTML = '<span class="badge badge-verified">✓ Verified Account</span>';
         } else {
             badgeDiv.innerHTML = '<span class="badge badge-pending">⏳ Pending Verification</span>';
         }
 
         // Update personal information
-        document.getElementById('displayFullName').textContent = data.fullName || 'N/A';
-        document.getElementById('displayEmail').textContent = data.email || 'N/A';
-        document.getElementById('displayPhone').textContent = data.phone || 'N/A';
+        document.getElementById('displayFullName').textContent = displayName;
+        document.getElementById('displayEmail').textContent = userData.email || 'Not provided';
+        document.getElementById('displayPhone').textContent = userData.phone || 'Not provided';
 
-        // Update localStorage
-        localStorage.setItem('fullname', data.fullName || '');
+        // Update localStorage to match the backend's fullName or fallback
+        localStorage.setItem('fullname', userData.fullName || displayName || '');
         
-        // Load order statistics
-        loadOrderStats();
+        // Load order statistics from backend
+        if (userData.stats) {
+            document.getElementById('totalOrders').textContent = userData.stats.totalOrders || 0;
+            document.getElementById('activeOrders').textContent = userData.stats.activeOrders || 0;
+            document.getElementById('completedOrders').textContent = userData.stats.completedOrders || 0;
+        } else {
+            // Fallback to calculating from orders if stats not available
+            loadOrderStats();
+        }
         
     } catch (err) {
         console.error('Error loading profile:', err);
-        document.getElementById('profileDisplayName').textContent = 'Error loading profile';
+        // Fallback to localStorage data if API fails
+        const savedFullname = localStorage.getItem('fullname');
+        const savedEmail = localStorage.getItem('email');
+        const fallbackName = savedFullname || (savedEmail ? savedEmail.split('@')[0] : 'Customer');
+        document.getElementById('profileDisplayName').textContent = fallbackName;
+        document.getElementById('displayFullName').textContent = fallbackName;
+        document.getElementById('avatarInitials').textContent = getInitials(fallbackName);
+        document.getElementById('verificationBadge').innerHTML = '<span class="badge badge-verified">✓ Verified Account</span>';
     }
 }
 
@@ -439,6 +610,14 @@ function makeEditable(element) {
 
 // Save field value
 async function saveField(element, field, newValue) {
+    // Get userId from localStorage
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+        console.error('No user ID found, redirecting to login');
+        window.location.href = 'login.html';
+        return;
+    }
+    
     const oldValue = currentProfile[field];
     
     // Trim value
@@ -538,9 +717,17 @@ function showSaveIndicator(message, isError = false) {
     }, 3000);
 }
 
-// Load order statistics
+// Load order statistics and display orders
 async function loadOrderStats() {
     try {
+        // Get userId from localStorage
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            console.error('No user ID found, redirecting to login');
+            window.location.href = 'login.html';
+            return;
+        }
+        
         const res = await fetch(`${API_BASE}/api/customer/${userId}/orders`);
         
         if (!res.ok) {
@@ -548,7 +735,7 @@ async function loadOrderStats() {
         }
         
         const data = await res.json();
-        const orders = data.orders || [];
+        const orders = Array.isArray(data) ? data : data.orders || [];
 
         // Calculate statistics
         const totalOrders = orders.length;
@@ -567,6 +754,7 @@ async function loadOrderStats() {
         // Keep default values (0) if error
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', loadProfile);
 </script>

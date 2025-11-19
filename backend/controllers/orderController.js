@@ -108,6 +108,9 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
     
+    // Track status change for customer stats
+    const oldStatus = order.status;
+    
     // Update fields
     if (status) order.status = status;
     if (paymentStatus) order.paymentStatus = paymentStatus;
@@ -116,6 +119,34 @@ exports.updateOrderStatus = async (req, res) => {
     order.staffId = req.userId;
     
     await order.save();
+    
+    // Update customer stats if order changed to/from Completed
+    if (order.userId && oldStatus !== status) {
+      const Customer = require('../models/customer');
+      const statusChange = {};
+      
+      if (oldStatus !== 'Completed' && status === 'Completed') {
+        // Order completed: decrement active, increment completed
+        statusChange['$inc'] = {
+          'stats.activeOrders': -1,
+          'stats.completedOrders': 1
+        };
+      } else if (oldStatus === 'Completed' && status !== 'Completed') {
+        // Order un-completed: increment active, decrement completed
+        statusChange['$inc'] = {
+          'stats.activeOrders': 1,
+          'stats.completedOrders': -1
+        };
+      }
+      
+      if (statusChange['$inc']) {
+        await Customer.updateOne(
+          { userId: order.userId },
+          statusChange
+        );
+        console.log('✅ Customer stats updated for order status change:', orderId);
+      }
+    }
     
     // Populate for response
     await order.populate('userId', 'fullname email phone');

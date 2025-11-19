@@ -8,6 +8,9 @@ const Customer = require("../models/customer");
 const { generateOTP, sendOTP } = require("../utils/emailService");
 const moment = require('moment');
 
+// Login session store (in-memory for demo, use Redis in production)
+const loginSessions = new Map();
+
 // Helpers to normalize identifiers (emails => lowercase, phones => digits-only)
 function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : email;
@@ -104,21 +107,22 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+// Start login process by sending OTP
+exports.initiateLogin = async (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier can be email or phone
-    console.log('🔐 Login attempt:', { identifier, passwordLength: password?.length });
+    const { identifier } = req.body;
+    console.log('🔐 Login initiation for:', identifier);
     
-    if (!identifier || !password) return res.status(400).json({ message: "Missing credentials" });
+    if (!identifier) return res.status(400).json({ message: "Email or phone is required" });
     
     // Normalize identifier for robust matching
     const id = identifier.trim();
     const idEmail = id.includes('@') ? normalizeEmail(id) : null;
     const idPhone = normalizePhone(id);
 
-    console.log('🔍 Searching for user in MongoDB:', { idEmail, idPhone });
+    console.log('🔍 Searching for user:', { idEmail, idPhone });
 
-    // Query MongoDB directly for the user
+    // Find user by email or phone
     const user = await User.findOne({
       $or: [
         ...(idEmail ? [{ email: new RegExp('^' + idEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }] : []),
@@ -127,59 +131,147 @@ exports.login = async (req, res) => {
     });
 
     if (!user) {
-      console.log('❌ User not found in MongoDB');
-      return res.status(401).json({ message: "Invalid credentials" });
+      console.log('❌ User not found');
+      return res.status(404).json({ message: "User not found" });
     }
 
-    console.log('✅ User found in MongoDB:', { email: user.email, role: user.role });
-
-    // Compare password using bcrypt
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log('🔑 Password match:', isMatch);
+    // Generate 4-digit OTP
+    const otp = generateOTP();
+    const otpExpires = moment().add(10, 'minutes').toDate();
     
-    if (!isMatch) {
-      console.log('❌ Password mismatch');
-      return res.status(401).json({ message: "Invalid credentials" });
+    // Store OTP in memory (use Redis in production)
+    loginSessions.set(user._id.toString(), {
+      otp,
+      expires: otpExpires,
+      attempts: 0
+    });
+
+    // Send OTP via email
+    const emailToSend = idEmail || user.email;
+    if (!emailToSend) {
+      return res.status(400).json({ message: "No email found for this account" });
     }
 
-    const token = generateToken({ userId: user._id, role: user.role });
+    const emailSent = await sendOTP(emailToSend, otp, 'login');
+    if (!emailSent) {
+      return res.status(500).json({ message: "Failed to send OTP" });
+    }
 
+    console.log('✅ OTP sent to:', emailToSend);
+    res.json({ 
+      message: "OTP sent to your email", 
+      userId: user._id,
+      email: emailToSend,
+      expiresIn: '10 minutes'
+    });
+
+  } catch (err) {
+    console.error("Login initiation error:", err);
+    res.status(500).json({ message: "Server error during login" });
+  }
+};
+
+// Verify OTP and complete login
+exports.verifyOTPLogin = async (req, res) => {
+  try {
+    const { userId, otp } = req.body;
+    console.log('🔑 Verifying OTP for user:', userId);
+    
+    if (!userId || !otp) {
+      return res.status(400).json({ message: "User ID and OTP are required" });
+    }
+
+    // Get login session
+    const session = loginSessions.get(userId);
+    if (!session) {
+      return res.status(400).json({ message: "OTP expired or invalid" });
+    }
+
+    // Check if OTP is expired
+    if (moment().isAfter(session.expires)) {
+      loginSessions.delete(userId);
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    // Check OTP attempts
+    if (session.attempts >= 3) {
+      loginSessions.delete(userId);
+      return res.status(429).json({ message: "Too many attempts. Please try again." });
+    }
+
+    // Verify OTP
+    if (session.otp !== otp) {
+      session.attempts += 1;
+      const remainingAttempts = 3 - session.attempts;
+      return res.status(400).json({ 
+        message: `Invalid OTP. ${remainingAttempts} attempts remaining.`,
+        remainingAttempts
+      });
+    }
+
+    // OTP is valid, get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Auto-verify customer if not verified
+    if (user.role === 'Customer' && !user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+      console.log('✅ Customer auto-verified after OTP login:', user.email);
+    }
+
+    // Generate JWT token
+    const token = generateToken({ userId: user._id, role: user.role });
+    
+    // Clear the OTP session
+    loginSessions.delete(userId);
+
+    console.log('✅ Login successful for user:', user.email);
     res.json({
       message: "Login successful",
       token,
       userId: user._id,
       role: user.role,
-      fullname: user.fullname
+      fullname: user.fullname,
+      isVerified: user.isVerified
     });
+
   } catch (err) {
-    console.error("login error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("OTP verification error:", err);
+    res.status(500).json({ message: "Server error during OTP verification" });
   }
 };
 
+// Resend OTP for login
+// Resend OTP for login
 exports.resendOTP = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { userId } = req.body;
     
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
     }
     
-    const user = await User.findOne({ email: normalizeEmail(email) });
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
     
     // Generate new OTP
     const otp = generateOTP();
-    const otpExpires = moment().add(process.env.OTP_EXPIRATION || 10, 'minutes').toDate();
+    const otpExpires = moment().add(10, 'minutes').toDate();
     
-    user.verificationCode = otp;
-    user.verificationCodeExpires = otpExpires;
-    await user.save();
+    // Update session
+    loginSessions.set(user._id.toString(), {
+      otp,
+      expires: otpExpires,
+      attempts: 0
+    });
     
-    // Send OTP to email
-    const emailSent = await sendOTP(user.email, otp);
+    // Send new OTP
+    const emailSent = await sendOTP(user.email, otp, 'login');
     
     if (!emailSent) {
       throw new Error('Failed to send OTP email');
@@ -187,11 +279,10 @@ exports.resendOTP = async (req, res) => {
     
     res.json({
       message: `New OTP sent to ${user.email}`,
-      requiresOTP: true,
-      email: user.email
+      expiresIn: '10 minutes'
     });
   } catch (err) {
-    console.error("resendOTP error:", err);
+    console.error("Resend OTP error:", err);
     res.status(500).json({ message: "Failed to resend OTP" });
   }
 };

@@ -315,6 +315,23 @@ curl -X POST http://localhost:5002/api/auth/signup \
   -d '{"fullname":"Test User","email":"test@example.com","phone":"0712345678","password":"test123","role":"Customer"}'
 ```
 
+### Access Points
+
+- **Landing Page**: `http://localhost:3000/index.html` (Main entry point)
+- **Customer Login**: `http://localhost:3000/frontend/login.html`
+- **Customer Signup**: `http://localhost:3000/frontend/signup.html`
+- **Customer Dashboard**: `http://localhost:3000/frontend/cdashboard.html`
+- **Staff Dashboard**: `http://localhost:3000/frontend/staff-Dashboard.html`
+- **Admin Panel**: `http://localhost:3000/frontend/admindashboard.html`
+
+### Landing Page Features
+- Professional hero section with call-to-action buttons
+- Service showcase with icons
+- Customer testimonials
+- Quick navigation to all major sections
+- Responsive design with animations
+- Links to login, signup, and dashboard pages
+
 ### Test OTP Functionality
 ```bash
 # Request OTP for email change

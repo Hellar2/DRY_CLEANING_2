@@ -10,7 +10,8 @@ const {
   createCustomerOrder, 
   getCustomerProfile, 
   requestEmailChangeOTP, 
-  updateCustomerProfile 
+  updateCustomerProfile,
+  trackOrderByQRCode 
 } = require('../controllers/customerController');
 
 // IMPORTANT: More specific routes MUST come before generic routes
@@ -37,6 +38,11 @@ router.post("/:userId/profile/request-otp", requestEmailChangeOTP);
 router.put("/:userId", updateCustomerProfile);
 
 // ===========================
+// GET Track Order by Order Number (Public)
+// ===========================
+router.get("/track/:orderNumber", trackOrderByQRCode);
+
+// ===========================
 // GET Customer Profile by ID
 // ===========================
 router.get("/:userId", async (req, res) => {
@@ -56,7 +62,8 @@ router.get("/:userId", async (req, res) => {
         fullname: user.fullname,
         email: user.email,
         phone: user.phone,
-        role: user.role
+        role: user.role,
+        isVerified: user.isVerified
       }
     });
 

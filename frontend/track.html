@@ -19,15 +19,31 @@
     const trackingCode = urlParts[urlParts.length - 1];
     document.getElementById('trackingId').textContent = "Tracking Code: " + trackingCode;
 
-    // Simulate a database lookup (for now)
-    const savedData = JSON.parse(localStorage.getItem('dashboardData')) || {};
-    const order = savedData.orderQueue?.find(o => o.id === trackingCode);
-
-    if (order) {
-      document.getElementById('status').textContent = "Current Status: " + order.status.toUpperCase();
-    } else {
-      document.getElementById('status').textContent = "❌ No order found with this tracking code.";
+    // Fetch order data from backend instead of localStorage
+    async function trackOrder() {
+      try {
+        const response = await fetch(`http://localhost:5002/api/customer/track/${trackingCode}`);
+        
+        if (!response.ok) {
+          document.getElementById('status').textContent = "❌ No order found with this tracking code.";
+          return;
+        }
+        
+        const order = await response.json();
+        
+        if (order) {
+          document.getElementById('status').textContent = "Current Status: " + (order.status || 'UNKNOWN').toUpperCase();
+        } else {
+          document.getElementById('status').textContent = "❌ No order found with this tracking code.";
+        }
+      } catch (error) {
+        console.error('Error tracking order:', error);
+        document.getElementById('status').textContent = "❌ Error tracking order. Please try again later.";
+      }
     }
+    
+    // Call the tracking function
+    trackOrder();
   </script>
 </body>
 </html>

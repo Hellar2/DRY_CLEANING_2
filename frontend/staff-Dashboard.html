@@ -54,7 +54,8 @@ select{padding:6px 8px;border-radius:6px;border:1px solid var(--accent-2);backgr
       </div>
     </div>
     <nav>
-      <div class="nav-item active" data-section="dashboard">🏠 Dashboard</div>
+      <div class="nav-item" onclick="location='../index.html'">🏠 Home</div>
+      <div class="nav-item active" data-section="dashboard">📊 Dashboard</div>
       <div class="nav-item" data-section="register" onclick="location='register.html'">➕ Register Garment</div>
       <div class="nav-item" data-section="update" onclick="location='update.html'">🔄 Update Status</div>
       <div class="nav-item" data-section="scanner" onclick="location='qr-scanner.html'">📱 Scan QR Code</div>
@@ -134,6 +135,13 @@ const user = JSON.parse(localStorage.getItem("staffUser")||"{}");
 if(user.name) document.getElementById("staffName").textContent=user.name;
 if(user.email) document.getElementById("staffEmail").textContent=user.email;
 if(user.name) document.getElementById("avatarInitial").textContent=user.name.charAt(0).toUpperCase();
+
+// Get staff user ID for user-specific data
+const staffUserId = localStorage.getItem('userId');
+if (!staffUserId) {
+  console.error('No staff user ID found, redirecting to login');
+  setTimeout(() => window.location.href = 'login.html', 1500);
+}
 
 let orders = [];
 
@@ -272,7 +280,18 @@ function startAutoRefresh(){
 }
 
 function logout(){
+  // Clear user-specific data
+  const userId = localStorage.getItem('userId');
+  if (userId) {
+    // Clear any staff-specific localStorage keys
+    const staffDataKey = `staffDashboardData_${userId}`;
+    localStorage.removeItem(staffDataKey);
+  }
+  
   localStorage.removeItem("authToken");
+  localStorage.removeItem("userId");
+  localStorage.removeItem("role");
+  localStorage.removeItem("fullname");
   localStorage.removeItem("staffUser");
   toast("Logged out",1200);
   setTimeout(()=>location.href="login.html",800);

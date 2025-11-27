@@ -22,7 +22,18 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Generate a 4-digit OTP
+// Generate a 4-digit numeric code for login verification
+// Generate a 7-character alphanumeric code for signup verification
+const generateVerificationCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 7; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
+// Generate a 4-digit numeric code for login verification
 const generateOTP = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
@@ -74,5 +85,6 @@ const sendOTP = async (email, otp, type = 'verification') => {
 
 module.exports = {
   generateOTP,
+  generateVerificationCode,
   sendOTP,
 };

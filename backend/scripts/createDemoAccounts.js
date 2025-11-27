@@ -7,9 +7,9 @@ const Customer = require('../models/customer');
 const DEMO_ACCOUNTS = [
   {
     fullname: 'Admin Demo',
-    email: 'admin@dryclean.com',
+    email: 'hellenmuraki34@gmail.com',
     phone: '0700000001',
-    password: 'admin123',
+    password: 'M@123456',
     role: 'Admin'
   },
   {

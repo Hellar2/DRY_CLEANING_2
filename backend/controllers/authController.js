@@ -46,18 +46,26 @@ exports.register = async (req, res) => {
     const normPhone = normalizePhone(phone);
 
     // Check if user exists in MongoDB
-    const existingUser = await User.findOne({
-      $or: [
-        { email: new RegExp('^' + normEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') },
-        { phone: normPhone }
-      ]
+    const existingEmail = await User.findOne({
+      email: new RegExp('^' + normEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
     });
     
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    if (existingEmail) {
+      return res.status(400).json({ 
+        message: "Email is already registered. Please use a different email or try logging in.",
+        field: "email"
+      });
+    }
+    
+    const existingPhone = await User.findOne({ phone: normPhone });
+    if (existingPhone) {
+      return res.status(400).json({ 
+        message: "Phone number is already registered. Please use a different phone number or try logging in.",
+        field: "phone"
+      });
     }
 
-    // Generate verification code
+    // Generate 7-character alphanumeric verification code for signup
     const verificationCode = generateVerificationCode();
     const verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -122,10 +130,10 @@ exports.initiateLogin = async (req, res) => {
 
     console.log('🔍 Searching for user:', { idEmail, idPhone });
 
-    // Find user by email or phone
+    // Find user by email (case-insensitive) or phone
     const user = await User.findOne({
       $or: [
-        ...(idEmail ? [{ email: new RegExp('^' + idEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }] : []),
+        ...(idEmail ? [{ email: { $regex: `^${idEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } }] : []),
         ...(idPhone ? [{ phone: idPhone }] : [])
       ]
     });
@@ -135,8 +143,9 @@ exports.initiateLogin = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Generate 4-digit OTP
-    const otp = generateOTP();
+    // Generate 4-digit numeric OTP for login
+    const { generateOTP } = require('../utils/emailService');
+    const otp = generateOTP(); // This will generate a 4-digit code
     const otpExpires = moment().add(10, 'minutes').toDate();
     
     // Store OTP in memory (use Redis in production)
@@ -259,19 +268,17 @@ exports.resendOTP = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     
-    // Generate new OTP
-    const otp = generateOTP();
-    const otpExpires = moment().add(10, 'minutes').toDate();
+    // Generate new 7-character verification code
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpires = moment().add(10, 'minutes').toDate();
     
-    // Update session
-    loginSessions.set(user._id.toString(), {
-      otp,
-      expires: otpExpires,
-      attempts: 0
-    });
+    // Update user with new verification code
+    user.verificationCode = verificationCode;
+    user.verificationCodeExpires = verificationCodeExpires;
+    await user.save();
     
-    // Send new OTP
-    const emailSent = await sendOTP(user.email, otp, 'login');
+    // Send new verification code
+    const emailSent = await sendOTP(user.email, verificationCode, 'verification');
     
     if (!emailSent) {
       throw new Error('Failed to send OTP email');
@@ -301,10 +308,6 @@ exports.verifyAccount = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (user.isVerified) {
-      return res.status(400).json({ message: "Account already verified" });
-    }
-
     // Check if code has expired
     if (user.verificationCodeExpires < new Date()) {
       return res.status(400).json({ message: "Verification code has expired" });
@@ -314,12 +317,15 @@ exports.verifyAccount = async (req, res) => {
     if (user.verificationCode !== verificationCode.toUpperCase()) {
       return res.status(400).json({ message: "Invalid verification code" });
     }
-
-    // Verify the user
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    await user.save();
+    
+    // If we reach here, the code is valid
+    // Mark as verified if not already
+    if (!user.isVerified) {
+      user.isVerified = true;
+      user.verificationCode = undefined;
+      user.verificationCodeExpires = undefined;
+      await user.save();
+    }
 
     // Generate token after verification
     const token = generateToken({ userId: user._id, role: user.role });

@@ -6,39 +6,150 @@
   <title>Sign Up</title>
   <link rel="stylesheet" href="main.css" />
   <style>
+    /* Base container */
+    .container {
+      padding: 0.75rem 1rem;
+      line-height: 1.2;
+    }
+    
+    /* Form elements */
+    form {
+      margin-top: 0.25rem;
+    }
+    
+    label {
+      display: block;
+      margin: 0.3rem 0 0.1rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      line-height: 0.8;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      margin-bottom: 0.3rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.25rem;
+      font-size: 0.9rem;
+      line-height: 0.8;
+      transition: border-color 0.2s;
+    }
+    
+    /* Remove blue outline on input focus */
+    input:focus, select:focus {
+      outline: none;
+      border-color: #d1d5db;
+      box-shadow: none;
+    }
+    
+    /* Remove blue highlight specifically for password input */
+    #password, 
+    #password:focus,
+    input[type="password"], 
+    input[type="password"]:focus {
+      outline: none !important;
+      border-color: #d1d5db !important;
+      box-shadow: none !important;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Error message styling */
+    .error-message {
+      color: #e53e3e;
+      font-size: 0.7rem;
+      margin: 0 0 0.1rem;
+      min-height: 0.9rem;
+      line-height: 1;
+    }
+    
+    /* Highlight error fields */
+    input.error, select.error {
+      border-color: #e53e3e;
+      margin-bottom: 0.25rem;
+    }
+
     /* Password toggle styles */
     .password-container {
       position: relative;
       display: flex;
       align-items: center;
+      margin-bottom: 0.5rem;
     }
     
     .password-container input {
       width: 100%;
-      padding-right: 45px; /* Space for the toggle button */
+      padding-right: 2.5rem;
+      margin-bottom: 0;
     }
     
     .password-toggle {
       position: absolute;
-      right: 10px;
+      right: 8px;
       background: none;
       border: none;
       cursor: pointer;
-      padding: 5px;
-      border-radius: 3px;
+      padding: 4px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background-color 0.3s ease;
+      outline: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      height: 24px;
+      width: 24px;
     }
     
-    .password-toggle:hover {
-      background-color: #f0f0f0;
+    .password-toggle:focus {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+    
+    .password-toggle::-webkit-focus-inner {
+      border: 0;
+      padding: 0;
+      margin: 0;
     }
     
     .eye-icon {
-      font-size: 16px;
+      font-size: 1rem;
       user-select: none;
+    }
+    
+    /* Remove blue highlight on password toggle click */
+    .password-toggle:focus {
+      outline: none;
+      box-shadow: none;
+    }
+    
+    .password-toggle::-moz-focus-inner {
+      border: 0;
+    }
+    
+    /* Adjust button spacing */
+    button[type="button"] {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.5rem;
+    }
+    
+    /* Make the form more compact */
+    h1 {
+      margin: 0.3rem 0 0.1rem;
+      font-size: 1.3rem;
+      line-height: 1.2;
+    }
+    
+    .subtitle {
+      margin: 0 0 0.5rem;
+      color: #6b7280;
+      font-size: 0.85rem;
+      line-height: 1.2;
     }
   </style>
 </head>
@@ -55,12 +166,15 @@
     <form id="signupForm">
       <label>Full Name</label>
       <input type="text" id="fullname" placeholder="Enter full name" required />
+      <div id="fullnameError" class="error-message"></div>
 
       <label>Phone Number</label>
       <input type="text" id="phone" placeholder="Enter phone number" required />
+      <div id="phoneError" class="error-message"></div>
 
       <label>Email</label>
       <input type="email" id="email" placeholder="Enter email" required />
+      <div id="emailError" class="error-message"></div>
 
       <label>Password</label>
       <div class="password-container">
@@ -84,7 +198,16 @@
       <h2>Verify Your Account</h2>
       <p class="subtitle">Enter the 7-digit verification code sent to your email</p>
       <label>Verification Code</label>
-      <input type="text" id="verificationCode" placeholder="Enter 7-digit code" maxlength="7" style="text-transform: uppercase;" />
+      <input 
+        type="text" 
+        id="verificationCode" 
+        placeholder="Enter 7-character code" 
+        pattern="[A-Za-z0-9]{7}" 
+        title="Please enter exactly 7 alphanumeric characters"
+        maxlength="7" 
+        style="text-transform: uppercase;"
+        oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase()"
+      />
       <button type="button" id="verifyBtn">Verify Account</button>
       <button type="button" id="resendBtn" style="margin-top: 10px; background: #6c757d;">Resend Code</button>
     </div>
@@ -103,21 +226,62 @@
   let pendingUserId = null;
   let pendingEmail = null;
 
-  signupBtn.addEventListener("click", async (e) => {
-    e.preventDefault();
-
-    const userData = {
-      fullname: document.getElementById("fullname").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      password: document.getElementById("password").value.trim(),
-      role: document.getElementById("role").value
-    };
-
-    if (!userData.fullname || !userData.phone || !userData.email || !userData.password || !userData.role) {
-      console.log("Please fill in all fields.");
-      return;
+    // Clear previous error messages and styles
+    function clearErrors() {
+      document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+      document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
     }
+
+    // Show error for a specific field
+    function showError(field, message) {
+      const errorElement = document.getElementById(`${field}Error`);
+      const inputElement = document.getElementById(field);
+      if (errorElement) errorElement.textContent = message;
+      if (inputElement) inputElement.classList.add('error');
+    }
+
+    signupBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const userData = {
+        fullname: document.getElementById("fullname").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim().toLowerCase(),
+        password: document.getElementById("password").value.trim(),
+        role: document.getElementById("role").value
+      };
+
+      // Basic validation
+      let isValid = true;
+      if (!userData.fullname) {
+        showError('fullname', 'Full name is required');
+        isValid = false;
+      }
+      if (!userData.phone) {
+        showError('phone', 'Phone number is required');
+        isValid = false;
+      }
+      if (!userData.email) {
+        showError('email', 'Email is required');
+        isValid = false;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+        showError('email', 'Please enter a valid email address');
+        isValid = false;
+      }
+      if (!userData.password) {
+        showError('password', 'Password is required');
+        isValid = false;
+      } else if (userData.password.length < 6) {
+        showError('password', 'Password must be at least 6 characters');
+        isValid = false;
+      }
+      if (!userData.role) {
+        showError('role', 'Please select a role');
+        isValid = false;
+      }
+
+      if (!isValid) return;
 
     signupBtn.disabled = true;
     signupBtn.textContent = "Signing up...";
@@ -145,7 +309,15 @@
         alert(data.message || "Account created successfully!");
         window.location.href = "login.html";
       } else {
-        alert(data.message || "Signup failed. Please try again.");
+        // Show specific error message based on the field
+        if (data.field === 'email') {
+          showError('email', data.message);
+        } else if (data.field === 'phone') {
+          showError('phone', data.message);
+        } else {
+          // For other errors, show a general error message
+          alert(data.message || "Signup failed. Please check your information and try again.");
+        }
       }
 
     } catch (error) {
@@ -162,8 +334,8 @@
 
     const code = verificationCodeInput.value.trim().toUpperCase();
 
-    if (!code || code.length !== 7) {
-      alert("Please enter a valid 7-digit verification code.");
+    if (!code || code.length !== 7 || !/^[A-Z0-9]{7}$/.test(code)) {
+      alert("Please enter a valid 7-character alphanumeric verification code.");
       return;
     }
 
@@ -207,8 +379,8 @@
   resendBtn.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    if (!pendingEmail) {
-      alert("No email found. Please try signing up again.");
+    if (!pendingUserId) {
+      alert("No user session found. Please try signing up again.");
       return;
     }
 
@@ -219,13 +391,13 @@
       const res = await fetch("http://localhost:5002/api/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail }),
+        body: JSON.stringify({ userId: pendingUserId }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert(data.message || "New verification code sent to your email!");
+        alert(data.message || `New verification code sent to your email!`);
       } else {
         alert(data.message || "Failed to resend code. Please try again.");
       }

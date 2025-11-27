@@ -58,6 +58,9 @@
   </div>
 
   <script>
+    // API Configuration
+    const API_BASE = 'http://localhost:5002';
+    
     const ordersTable = document.getElementById('ordersTable');
     const orderSearch = document.getElementById('orderSearch');
     const statusFilter = document.getElementById('statusFilter');
@@ -162,14 +165,64 @@
         }
       }
       if(e.target.classList.contains('edit')) {
-        const newStatus = prompt("Update order status:\n\nOptions:\n- Received\n- In Progress\n- Ready for Pickup\n- Completed\n- Picked Up");
+        const newStatus = prompt("Update order status:\n\nOptions (case sensitive):\n- Received\n- In Progress\n- Ready for Pickup\n- Completed\n- Picked Up");
         const validStatuses = ['Received', 'In Progress', 'Ready for Pickup', 'Completed', 'Picked Up'];
         
         if (newStatus && validStatuses.includes(newStatus)) {
-          // You'll need to create an update endpoint
-          alert(`Status update to "${newStatus}" - Implement update endpoint`);
+          try {
+            e.target.disabled = true;
+            e.target.textContent = 'Updating...';
+            
+            console.log('Updating order status...', { id, newStatus });
+            const res = await fetch(`${API_BASE}/api/orders/${id}/status`, { 
+              method: 'PUT',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+              },
+              body: JSON.stringify({ status: newStatus })
+            });
+
+            let result;
+            try {
+              // First try to parse as JSON
+              const text = await res.text();
+              result = text ? JSON.parse(text) : {};
+              
+              if (!res.ok) {
+                console.error('Error response:', { status: res.status, statusText: res.statusText, result });
+                throw new Error(result.message || `Failed to update order status: ${res.status} ${res.statusText}`);
+              }
+              
+              console.log('Update successful:', result);
+            } catch (parseError) {
+              console.error('Error parsing response:', parseError);
+              throw new Error('Invalid response from server. Please try again.');
+            }
+
+            // Update the status in the UI
+            const statusCell = row.querySelector('td:nth-child(7)');
+            if (statusCell) {
+              const statusColor = {
+                'Received': '#f59e0b',
+                'In Progress': '#3b82f6',
+                'Ready for Pickup': '#8b5cf6',
+                'Completed': '#10b981',
+                'Picked Up': '#059669'
+              }[newStatus] || '#6b7280';
+              
+              statusCell.innerHTML = `<span style="padding: 4px 8px; background: ${statusColor}; color: white; border-radius: 4px; font-size: 12px;">${newStatus}</span>`;
+              alert('Order status updated successfully!');
+            }
+          } catch (err) {
+            console.error('Error updating order status:', err);
+            alert(`Error: ${err.message || 'Failed to update order status'}`);
+          } finally {
+            e.target.disabled = false;
+            e.target.textContent = 'Update';
+          }
         } else if (newStatus) {
-          alert('Invalid status. Please use one of the valid options.');
+          alert('Invalid status. Please use one of the valid options exactly as shown.');
         }
       }
     });

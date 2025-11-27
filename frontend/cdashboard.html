@@ -335,103 +335,124 @@
                 
                 if (!userId) {
                     alert('Please login to create an order');
+                    window.location.href = 'login.html';
                     return;
                 }
 
                 // Calculate total
                 const total = selectedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-                // Prepare order data
+                // Prepare order data with additional required fields
                 const orderData = {
                     items: selectedItems,
                     garmentType: selectedItems.map(item => item.itemType).join(', '),
                     quantity: selectedItems.reduce((sum, item) => sum + item.quantity, 0),
                     serviceType: 'Standard',
                     price: total,
-                    totalAmount: total
+                    totalAmount: total,
+                    status: 'pending',
+                    paymentStatus: 'pending',
+                    customerId: userId,
+                    orderDate: new Date().toISOString()
                 };
 
                 console.log('📤 Sending order data:', orderData);
 
                 // Show loading state
                 const createBtn = document.querySelector('.auto-btn');
-                const originalText = createBtn.textContent;
                 createBtn.textContent = 'Creating Order...';
                 createBtn.disabled = true;
 
-                // Make API call
-                const response = await fetch(`${API_BASE}/customer/${userId}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-                    },
-                    body: JSON.stringify(orderData)
-                });
+                try {
+                    // Make API call to create order
+                    const response = await fetch(`${API_BASE}/api/customer/${userId}/orders`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(orderData)
+                    });
 
-                // Check response type
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Invalid server response. Please try again.');
-                }
+                    const result = await response.json();
 
-                const result = await response.json();
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Failed to create order');
+                    }
 
-                if (response.ok && result.success) {
                     // Success handling
+                    const order = result.data || result.order;
+                    if (!order) {
+                        throw new Error('Invalid order data received from server');
+                    }
+
                     const itemsDesc = selectedItems.map(item => 
                         `${item.quantity}x ${getItemDisplayName(item.itemType)}`
                     ).join(', ');
 
-                    // Create order object for orderQueue
+                    // Create order object for local state
                     const newOrder = {
-                        id: result.order.orderNumber || `ORD-${dashboardData.nextOrderId}`,
+                        id: order.orderNumber || `ORD-${Date.now()}`,
                         items: selectedItems.map(item => ({
                             type: getItemDisplayName(item.itemType),
                             quantity: item.quantity,
-                            price: kenyanPricing[item.itemType]
+                            price: item.price
                         })),
                         total: total,
-                        status: 'received',
-                        paid: false,
-                        paymentMethod: null,
-                        paymentStatus: 'pending',
-                        timestamp: new Date().toISOString(),
-                        pickupTime: null
+                        status: order.status || 'pending',
+                        paymentStatus: order.paymentStatus || 'pending',
+                        timestamp: order.orderDate || new Date().toISOString(),
+                        orderNumber: order.orderNumber
                     };
 
-                    // Add to orderQueue
-                    dashboardData.orderQueue.push(newOrder);
-                    dashboardData.nextOrderId++;
-                    console.log('Added new order:', newOrder);
-                    console.log('Saving to user-specific key:', `dashboardData_${userId}`);
-
-                    // Update dashboard
+                    // Update local state
+                    if (!dashboardData.orderQueue) {
+                        dashboardData.orderQueue = [];
+                    }
+                    dashboardData.orderQueue.unshift(newOrder); // Add to beginning of array
+                    dashboardData.nextOrderId = dashboardData.nextOrderId ? dashboardData.nextOrderId + 1 : 1;
+                    
+                    // Update dashboard stats
+                    dashboardData.stats = dashboardData.stats || {
+                        currentOrders: 0,
+                        totalOrders: 0,
+                        completedOrders: 0,
+                        totalRevenue: 0
+                    };
                     dashboardData.stats.currentOrders++;
                     dashboardData.stats.totalOrders++;
-                    addActivity(`New order #${newOrder.id} created - ${itemsDesc} - ${formatCurrency(total)}`);
 
-                    // Reset form and update UI
+                    // Save to localStorage
+                    const userSpecificKey = `dashboardData_${userId}`;
+                    localStorage.setItem(userSpecificKey, JSON.stringify(dashboardData));
+
+                    // Update UI
+                    addActivity(`New order #${newOrder.id} created - ${itemsDesc} - ${formatCurrency(total)}`);
                     resetOrderForm();
                     updateDashboard();
-                    console.log('Order saved successfully!');
 
                     // Show success message
-                    alert(`Order #${newOrder.id} created successfully!\n\nItems: ${itemsDesc}\nTotal: ${formatCurrency(total)}\n\nQR Code has been generated for tracking.`);
+                    alert(`Order #${newOrder.id} created successfully!\n\nItems: ${itemsDesc}\nTotal: ${formatCurrency(total)}`);
+                    
+                    // Refresh the orders list
+                    await updateDashboard();
 
-                } else {
-                    // Handle server errors
-                    throw new Error(result.message || result.error || 'Failed to create order');
+                } catch (error) {
+                    console.error('❌ Order creation error:', error);
+                    alert(`Error creating order: ${error.message}`);
+                    throw error; // Re-throw to be caught by outer catch
                 }
 
             } catch (error) {
-                console.error('❌ Order creation error:', error);
-                alert(`Error creating order: ${error.message}`);
+                console.error('Order processing error:', error);
+                // Error is already shown in the inner catch
             } finally {
                 // Restore button state
                 const createBtn = document.querySelector('.auto-btn');
-                createBtn.textContent = 'Create Order';
-                createBtn.disabled = false;
+                if (createBtn) {
+                    createBtn.textContent = 'Create Order';
+                    createBtn.disabled = false;
+                }
             }
         }
 

@@ -44,24 +44,23 @@
     }
 
     /* OTP Input Styles */
-    .otp-inputs {
-      display: flex;
-      justify-content: space-between;
+    .otp-input {
       margin: 1.5rem 0;
-      gap: 10px;
     }
 
-    .otp-inputs input {
-      width: 60px;
+    .otp-input input {
+      width: 100%;
       height: 60px;
+      padding: 12px;
       text-align: center;
-      font-size: 24px;
+      font-size: 18px;
       border: 2px solid #ddd;
       border-radius: 8px;
       transition: border-color 0.3s;
+      box-sizing: border-box;
     }
 
-    .otp-inputs input:focus {
+    .otp-input input:focus {
       border-color: #4a90e2;
       outline: none;
     }
@@ -167,11 +166,9 @@
       
       <form id="otpForm">
         <label>Verification Code</label>
-        <div class="otp-inputs">
-          <input type="text" id="otp1" maxlength="1" pattern="\d*" inputmode="numeric" required />
-          <input type="text" id="otp2" maxlength="1" pattern="\d*" inputmode="numeric" required />
-          <input type="text" id="otp3" maxlength="1" pattern="\d*" inputmode="numeric" required />
-          <input type="text" id="otp4" maxlength="1" pattern="\d*" inputmode="numeric" required />
+        <div class="otp-input">
+          <input type="text" id="otpInput" pattern="\d{4}" inputmode="numeric" maxlength="4" required 
+                 placeholder="Enter 4-digit OTP" style="width: 100%; padding: 12px; font-size: 18px; text-align: center;" />
         </div>
         
         <div class="otp-timer">
@@ -208,10 +205,11 @@
     </div>
   </div>
 
-  <script>
-    // Set backend base URL
-    const API_BASE = 'http://localhost:5002/api';
-    
+    <!-- Load config first -->
+    <script src="config.js"></script>
+    <script>
+    // API configuration is now available via window.API_CONFIG or window.API_BASE
+    console.log('API Configuration:', window.API_CONFIG);
     
     // Handle login form submission
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -225,10 +223,12 @@
       loginBtn.textContent = 'Sending OTP...';
       
       try {
-        console.log('Sending login request to:', `${API_BASE}/auth/login/initiate`);
+        // Use API_URL from config which already includes /api prefix
+        const loginUrl = `${window.API_CONFIG.API_URL}/auth/login/initiate`;
+        console.log('Sending login request to:', loginUrl);
         console.log('Request payload:', { identifier });
         
-        const response = await fetch(`${API_BASE}/auth/login/initiate`, {
+        const response = await fetch(loginUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier })
@@ -311,7 +311,7 @@
       resetBtn.textContent = "Resetting...";
 
       try {
-        const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+        const res = await fetch(`${window.API_CONFIG.API_URL}/auth/reset-password`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ identifier, newPassword })
@@ -356,25 +356,18 @@
     let loginSession = null;
     let resendTimer = null;
 
-    // Handle OTP input navigation
-    const otpInputs = document.querySelectorAll('.otp-inputs input');
-    otpInputs.forEach((input, index) => {
-      // Allow only numeric input
-      input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        
-        // Move to next input on number input
-        if (e.target.value && index < otpInputs.length - 1) {
-          otpInputs[index + 1].focus();
-        }
-      });
-
-      // Handle backspace
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && index > 0) {
-          otpInputs[index - 1].focus();
-        }
-      });
+    // Handle OTP input
+    const otpInput = document.getElementById('otpInput');
+    
+    // Function to handle OTP input
+    otpInput.addEventListener('input', (e) => {
+      // Allow only numeric input and limit to 4 digits
+      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+      
+      // Auto-submit when 4 digits are entered
+      if (e.target.value.length === 4) {
+        document.getElementById('otpForm').requestSubmit();
+      }
     });
 
 
@@ -387,8 +380,8 @@
         return resetLoginForm();
       }
       
-      // Get OTP from inputs
-      const otp = Array.from(otpInputs).map(input => input.value).join('');
+      // Get OTP from input
+      const otp = otpInput.value;
       
       if (otp.length !== 4) {
         alert('Please enter a valid 4-digit OTP');
@@ -401,7 +394,7 @@
       
       try {
         // Call verify OTP endpoint
-        const response = await fetch(`${API_BASE}/auth/login/verify`, {
+        const response = await fetch(`${window.API_CONFIG.API_URL}/auth/login/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -464,7 +457,7 @@
       resendLink.textContent = 'Sending...';
       
       try {
-        const response = await fetch(`${API_BASE}/auth/resend-otp`, {
+        const response = await fetch(`${window.API_CONFIG.API_URL}/api/auth/resend-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: loginSession.userId })
@@ -524,8 +517,8 @@
       document.getElementById('loginForm').reset();
       document.getElementById('otpForm').reset();
       
-      // Reset OTP inputs
-      otpInputs.forEach(input => input.value = '');
+      // Reset OTP input
+      otpInput.value = '';
       
       // Reset UI
       document.getElementById('loginForm').style.display = 'block';

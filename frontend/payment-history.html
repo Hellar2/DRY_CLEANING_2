@@ -109,25 +109,53 @@ const formatKES = amount => `KES ${Number(amount).toLocaleString('en-KE')}`;
 
 let payments = [];
 
-function loadPayments() {
-    const saved = localStorage.getItem('dashboardData');
-    if (!saved) return showNoPayments();
-    const data = JSON.parse(saved);
+async function loadPayments() {
+    try {
+        const userId = localStorage.getItem('userId');
+        const authToken = localStorage.getItem('authToken');
+        
+        if (!userId || !authToken) {
+            console.log('User not authenticated');
+            return showNoPayments();
+        }
 
-    // Consider completed (paid) and ready (pending) orders
-    payments = data.orderQueue.map(o => ({
-        id: o.id,
-        total: o.total,
-        date: o.pickupTime || o.timestamp,
-        paid: o.status === 'completed',
-        statusText: o.status === 'completed' ? 'Paid' : 'Pending',
-        paymentMethod: o.paymentMethod || '—'
-    }));
+        // Fetch payments from the backend
+        const response = await fetch(`${API_BASE}/api/payment/customer/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
 
-    if (!payments.length) return showNoPayments();
+        if (!response.ok) {
+            throw new Error('Failed to fetch payment history');
+        }
 
-    renderPayments(payments);
-    updateSummary(payments);
+        let paymentsData = await response.json();
+        
+        // Filter to only include completed payments
+        paymentsData = paymentsData.filter(payment => payment.status === 'Completed');
+        
+        // Map the payment data to match the expected format
+        payments = paymentsData.map(payment => ({
+            id: payment._id,
+            total: payment.amount,
+            date: payment.date || new Date().toISOString(),
+            paid: true,
+            statusText: 'Paid',
+            paymentMethod: payment.method || '—',
+            orderId: payment.orderId
+        }));
+
+        if (!payments.length) {
+            return showNoPayments();
+        }
+
+        renderPayments(payments);
+        updateSummary(payments);
+    } catch (error) {
+        console.error('Error loading payment history:', error);
+        showNoPayments();
+    }
 }
 
 // Render table rows

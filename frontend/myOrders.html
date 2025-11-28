@@ -783,8 +783,29 @@ function filterOrders(status){
 
 function searchOrders(query){
     if(!query.trim()) return displayOrders();
-    const filtered = ordersData.orderQueue.filter(o=>o.id.toString().includes(query) || 
-        (o.items && o.items.some(i=>i.type.toLowerCase().includes(query.toLowerCase()))));
+
+    const q = query.toLowerCase();
+
+    const filtered = ordersData.orderQueue.filter(o => {
+        // match by order id
+        const idMatch = o.id && o.id.toString().toLowerCase().includes(q);
+
+        // match by item type (e.g. "shirt", "pants")
+        const itemsMatch = o.items && o.items.some(i =>
+            i.type && i.type.toLowerCase().includes(q)
+        );
+
+        // match by status text (received, processing, ready, completed)
+        const statusMatch = (o.status || '').toLowerCase().includes(q);
+
+        // match by total amount text (e.g. "500" or "KES 500")
+        const amountValue = o.total || 0;
+        const amountText = formatCurrency(amountValue).toLowerCase();
+        const amountMatch = amountText.includes(q) || amountValue.toString().includes(q);
+
+        return idMatch || itemsMatch || statusMatch || amountMatch;
+    });
+
     displayOrders(filtered);
 }
 
@@ -959,21 +980,46 @@ async function processPaymentConfirmation(orderId, amount, method) {
             order.paymentMethod = 'M-Pesa';
             displayOrders();
         }
-        
-        // Show the M-Pesa instructions again with a thank you note
-        showMpesaInstructions(orderId, amount);
-        
-        // Update the message to indicate the payment was recorded
-        const statusMessage = document.getElementById('paymentStatusMessage');
-        if (statusMessage) {
-            statusMessage.innerHTML = '<strong>Thank you for your payment! The M-Pesa instructions are shown above for your reference.</strong>';
-            statusMessage.style.color = 'green';
+
+        // Also record this payment in the backend so it appears in Payment History
+        try {
+            const authToken = localStorage.getItem('authToken');
+            const response = await fetch(`${API_BASE}/api/payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authToken ? `Bearer ${authToken}` : ''
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    amount: amount,
+                    method: 'mpesa'
+                })
+            });
+
+            // We don't block the UI on this; just log if something goes wrong
+            if (!response.ok) {
+                console.warn('M-Pesa payment record not saved to backend');
+            }
+        } catch (e) {
+            console.warn('Error calling backend payment API for M-Pesa:', e);
         }
         
-        // Hide the confirm button since payment is complete
+        // Update the status message to indicate the payment was recorded
+        const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.innerHTML = '<strong>Thank you! Your payment has been recorded. You can still use the M-Pesa instructions above for reference.</strong>';
+            statusMessage.style.color = 'green';
+        }
+
+        // Show an OK button so the user can go back to My Orders
         const confirmBtn = document.getElementById('confirmationBtn');
         if (confirmBtn) {
-            confirmBtn.style.display = 'none';
+            confirmBtn.style.display = 'block';
+            confirmBtn.textContent = 'OK';
+            confirmBtn.onclick = function() {
+                closeConfirmationModal();
+            };
         }
     } catch (error) {
         console.error('Payment processing error:', error);

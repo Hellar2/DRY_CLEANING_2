@@ -1209,29 +1209,42 @@ function showPaymentFailed(errorMessage) {
 }
 
 function closeConfirmationModal() {
-    document.getElementById('paymentConfirmationModal').style.display = 'none';
-    // Reset confirmation modal
+    const modal = document.getElementById('paymentConfirmationModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Clear the confirmation message
+    const statusMessage = document.getElementById('paymentStatusMessage');
+    if (statusMessage) {
+        statusMessage.innerHTML = '';
+        statusMessage.style.color = '';
+    }
+    
+    // Reset the confirmation button
+    const confirmBtn = document.getElementById('confirmationBtn');
+    if (confirmBtn) {
+        confirmBtn.style.display = 'none';
+        confirmBtn.onclick = null;
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.disabled = false;
+    }
+    
+    // Reset modal content to default
     document.getElementById('confirmationIcon').textContent = '⏳';
     document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
-    document.getElementById('confirmationMessage').textContent = 'Please wait while we process your payment.';
-    document.getElementById('confirmationBtn').style.display = 'none';
+    document.getElementById('confirmationMessage').innerHTML = 'Please wait while we process your request...';
     
-    // Restore original payment details structure
-    const paymentDetails = document.getElementById('paymentDetails');
-    paymentDetails.innerHTML = `
-        <div class="summary-row">
-            <strong>Order:</strong>
-            <span id="summaryOrderNumber">#ORD-123456</span>
-        </div>
-        <div class="summary-row">
-            <strong>Amount:</strong>
-            <span id="summaryAmount">KES 500</span>
-        </div>
-        <div class="summary-row">
-            <strong>Method:</strong>
-            <span id="summaryMethod">M-Pesa</span>
-        </div>
-    `;
+    // Reload orders to reflect any changes
+    loadOrdersData().then(displayOrders);
+    
+    // If we're on the payment history page, refresh it
+    if (window.location.pathname.includes('payment-history.html')) {
+        // Check if loadPayments function exists (from payment-history.html)
+        if (typeof loadPayments === 'function') {
+            loadPayments();
+        }
+    }
 }
 
 function toggleOrderDetails(orderId){

@@ -928,47 +928,64 @@ function populateConfirmationModal(orderId, totalAmount, paymentMethod) {
 }
 
 function showMpesaInstructions(orderId, amount) {
+    const modal = document.getElementById('paymentConfirmationModal');
+    
+    // Set the modal content
     document.getElementById('confirmationIcon').textContent = '📱';
     document.getElementById('confirmationTitle').textContent = 'Pay via M-Pesa';
-    document.getElementById('paymentConfirmationModal').style.display = 'block';
+    
+    // Create the M-Pesa instructions HTML
     document.getElementById('confirmationMessage').innerHTML = `
-        <p>To complete your payment, please send the amount to the following M-Pesa number:</p>
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
-            <div style="margin-bottom: 10px;">
-                <strong>Order:</strong> #${orderId}
+        <div style="max-width: 500px; margin: 0 auto;">
+            <p>To complete your payment, please follow these instructions:</p>
+            <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">Order #:</div>
+                    <div>${orderId}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">Amount to Pay:</div>
+                    <div style="font-weight: bold; color: #065f46;">${formatCurrency(amount)}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">M-Pesa Number:</div>
+                    <div style="font-weight: bold;">0714788630</div>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <div style="font-weight: 500;">Account Name:</div>
+                    <div>Dry Cleaning Service</div>
+                </div>
             </div>
-            <div style="margin-bottom: 10px;">
-                <strong>Amount:</strong> ${formatCurrency(amount)}
+            
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #1f2937; font-size: 1.1em;">How to Pay via M-Pesa:</h4>
+                <ol style="margin: 0; padding-left: 20px; color: #4b5563;">
+                    <li style="margin-bottom: 8px;">Go to <strong>M-Pesa</strong> on your phone</li>
+                    <li style="margin-bottom: 8px;">Select <strong>Send Money</strong></li>
+                    <li style="margin-bottom: 8px;">Enter phone number: <strong>0714788630</strong></li>
+                    <li style="margin-bottom: 8px;">Enter amount: <strong>${formatCurrency(amount)}</strong></li>
+                    <li style="margin-bottom: 8px;">Enter your M-Pesa PIN</li>
+                    <li>Press OK and wait for confirmation</li>
+                </ol>
             </div>
-            <div style="margin-bottom: 10px;">
-                <strong>M-Pesa Number:</strong> 0714788630
-            </div>
-            <div>
-                <strong>Account Name:</strong> Dry Cleaning Service
+            
+            <div id="paymentStatusMessage" style="margin: 20px 0; padding: 10px; background: #f8fafc; border-radius: 6px; text-align: center;">
+                After completing the payment, click the button below to confirm
             </div>
         </div>
-        <div style="margin: 20px 0;">
-            <h4 style="margin-bottom: 10px;">Instructions:</h4>
-            <ol style="margin: 0; padding-left: 20px;">
-                <li>Go to M-Pesa menu on your phone</li>
-                <li>Select "Send Money"</li>
-                <li>Enter number: <strong>0714788630</strong></li>
-                <li>Enter the amount: <strong>${formatCurrency(amount)}</strong></li>
-                <li>Confirm and send payment</li>
-            </ol>
-        </div>
-        <p style="margin-top: 20px; font-style: italic;" id="paymentStatusMessage">
-            After completing the payment, click the button below to confirm your payment.
-        </p>
     `;
     
+    // Set up the confirmation button
     const confirmBtn = document.getElementById('confirmationBtn');
     confirmBtn.style.display = 'block';
     confirmBtn.textContent = 'I have completed the payment';
+    confirmBtn.style.margin = '10px auto';
     confirmBtn.onclick = function() {
-        // Process the payment confirmation
         processPaymentConfirmation(orderId, amount, 'mpesa');
     };
+    
+    // Show the modal
+    modal.style.display = 'block';
 }
 
 async function processPaymentConfirmation(orderId, amount, method) {

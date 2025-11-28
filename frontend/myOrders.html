@@ -909,7 +909,6 @@ function populateConfirmationModal(orderId, totalAmount, paymentMethod) {
 function showMpesaInstructions(orderId, amount) {
     document.getElementById('confirmationIcon').textContent = '📱';
     document.getElementById('confirmationTitle').textContent = 'Pay via M-Pesa';
-    // Show the modal if it's not already visible
     document.getElementById('paymentConfirmationModal').style.display = 'block';
     document.getElementById('confirmationMessage').innerHTML = `
         <p>To complete your payment, please send the amount to the following M-Pesa number:</p>
@@ -927,21 +926,15 @@ function showMpesaInstructions(orderId, amount) {
                 <strong>Account Name:</strong> Dry Cleaning Service
             </div>
         </div>
-        <div style="margin: 25px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
-            <h4 style="margin: 0 0 15px 0; color: #28a745; font-size: 1.2em;">
-                <i class="fas fa-mobile-alt" style="margin-right: 8px;"></i>
-                M-Pesa Payment Instructions
-            </h4>
-            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; font-family: 'Courier New', monospace; font-size: 1.05em; line-height: 1.6;">
-                <div style="margin-bottom: 12px;">1️⃣ <strong>Go to M-Pesa menu</strong> on your phone</div>
-                <div style="margin-bottom: 12px;">2️⃣ Select <strong>"Send Money"</strong></div>
-                <div style="margin-bottom: 12px;">3️⃣ Enter M-Pesa number: <strong style="color: #007bff;">0714788630</strong></div>
-                <div style="margin-bottom: 12px;">4️⃣ Enter amount: <strong style="color: #dc3545;">${formatCurrency(amount)}</strong></div>
-                <div>5️⃣ <strong>Confirm and send</strong> the payment</div>
-            </div>
-            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px; color: #2e7d32; font-size: 0.95em;">
-                <i class="fas fa-info-circle"></i> Complete the payment, then click the button below to confirm
-            </div>
+        <div style="margin: 20px 0;">
+            <h4 style="margin-bottom: 10px;">Instructions:</h4>
+            <ol style="margin: 0; padding-left: 20px;">
+                <li>Go to M-Pesa menu on your phone</li>
+                <li>Select "Send Money"</li>
+                <li>Enter number: <strong>0714788630</strong></li>
+                <li>Enter the amount: <strong>${formatCurrency(amount)}</strong></li>
+                <li>Confirm and send payment</li>
+            </ol>
         </div>
         <p style="margin-top: 20px; font-style: italic;" id="paymentStatusMessage">
             After completing the payment, click the button below to confirm your payment.
@@ -952,6 +945,13 @@ function showMpesaInstructions(orderId, amount) {
     confirmBtn.style.display = 'block';
     confirmBtn.textContent = 'I have completed the payment';
     confirmBtn.onclick = function() {
+        // Process the payment confirmation
+        processPaymentConfirmation(orderId, amount, 'mpesa');
+    };
+}
+
+async function processPaymentConfirmation(orderId, amount, method) {
+    try {
         // Update order status immediately
         const order = ordersData.orderQueue.find(o => o.id === orderId);
         if (order) {
@@ -960,61 +960,20 @@ function showMpesaInstructions(orderId, amount) {
             displayOrders();
         }
         
-        // Show success state with checkmark
-        document.getElementById('confirmationIcon').textContent = '✓';
-        document.getElementById('confirmationTitle').textContent = 'Payment Recorded';
-        
-        // Keep the M-Pesa instructions visible
-        document.getElementById('confirmationMessage').innerHTML = `
-            <div style="white-space: pre-line; font-family: monospace; margin-bottom: 20px;">
-                <strong>M-Pesa Payment Instructions:</strong>
-                
-Go to M-Pesa menu on your phone
-Select "Send Money"
-Enter the M-Pesa number: <strong>0714788630</strong>
-Enter the amount: <strong>${formatCurrency(amount)}</strong>
-Confirm and send the payment
-            </div>
-            <p style="color: green; font-weight: bold;">✓ Your payment has been recorded. Please complete the M-Pesa transaction.</p>
-        `;
-        
-        // Hide the confirm button
-        confirmBtn.style.display = 'none';
-        
-        // Close modal after delay
-        setTimeout(closeConfirmationModal, 3000);
-    };
-}
-
-async function processPaymentConfirmation(orderId, amount, method) {
-    try {
-        // Show processing state
-        document.getElementById('confirmationIcon').textContent = '⏳';
-        document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
-        document.getElementById('confirmationMessage').innerHTML = `
-            <p>Please wait while we process your M-Pesa payment...</p>
-        `;
-        document.getElementById('confirmationBtn').style.display = 'none';
-
-        // Simulate API call to verify payment
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
-        
-        // Update order status in the UI
-        const order = ordersData.orderQueue.find(o => o.id === orderId);
-        if (order) {
-            order.status = 'paid';
-            order.paymentMethod = 'M-Pesa';
-            displayOrders();
-        }
-        
-        // Show M-Pesa instructions after processing
+        // Show the M-Pesa instructions again with a thank you note
         showMpesaInstructions(orderId, amount);
         
-        // Update the status message to show payment was recorded
+        // Update the message to indicate the payment was recorded
         const statusMessage = document.getElementById('paymentStatusMessage');
         if (statusMessage) {
-            statusMessage.innerHTML = '<strong>✓ Payment recorded! Please complete the M-Pesa transaction using the instructions above.</strong>';
+            statusMessage.innerHTML = '<strong>Thank you for your payment! The M-Pesa instructions are shown above for your reference.</strong>';
             statusMessage.style.color = 'green';
+        }
+        
+        // Hide the confirm button since payment is complete
+        const confirmBtn = document.getElementById('confirmationBtn');
+        if (confirmBtn) {
+            confirmBtn.style.display = 'none';
         }
     } catch (error) {
         console.error('Payment processing error:', error);

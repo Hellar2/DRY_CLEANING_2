@@ -2,7 +2,7 @@
 (function() {
     // Default configuration
     const defaultConfig = {
-        API_BASE: 'http://localhost:5002',
+        API_BASE: 'https://dry-cleaning2.vercel.app',
         API_URL: 'http://localhost:5002/api'
     };
 

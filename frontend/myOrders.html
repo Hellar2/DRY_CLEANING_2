@@ -997,7 +997,6 @@ async function processPaymentConfirmation(orderId, amount, method) {
                 })
             });
 
-            // We don't block the UI on this; just log if something goes wrong
             if (!response.ok) {
                 console.warn('M-Pesa payment record not saved to backend');
             }

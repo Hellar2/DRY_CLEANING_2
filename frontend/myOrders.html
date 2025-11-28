@@ -3,222 +3,1276 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment History - Dry Cleaning Service</title>
+<title>My Orders - Dry Cleaning Service</title>
 <link rel="stylesheet" href="profile.css">
 <style>
-    body { font-family: Arial, sans-serif; background: #f8f9fa; margin:0; color:#333; }
-    .dashboard-container { display:flex; }
-    .sidebar { width:220px; background:#0b1220; color:#fff; min-height:100vh; padding:1rem; }
-    .sidebar .logo { font-size:1.5rem; font-weight:bold; margin-bottom:1rem; }
-    .sidebar .nav-menu { list-style:none; padding:0; }
-    .sidebar .nav-menu li { margin:0.5rem 0; }
-    .sidebar .nav-menu li a { color:#dbe7ff; text-decoration:none; display:block; padding:0.5rem; border-radius:4px; }
-    .sidebar .nav-menu li.active a { background:#3b82f6; color:#fff; }
+    /* Sidebar + main content */
+    .dashboard-container { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:#0b1220; color:#dbe7ff; padding:20px; flex-shrink:0; }
+    .sidebar .logo { font-size:20px; font-weight:bold; margin-bottom:20px; }
+    .nav-menu { list-style:none; padding:0; margin:0; }
+    .nav-menu li { margin-bottom:15px; }
+    .nav-menu li a { color:#dbe7ff; text-decoration:none; display:block; }
+    .nav-menu li.active a { font-weight:bold; color:#3b82f6; }
+    .main-content { flex:1; padding:20px; background:#f4f4f4; }
 
-    .main-content { flex:1; padding:2rem; }
-    .content-header h1 { margin:0 0 0.5rem 0; }
-    .summary-cards { display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
-    .summary-card { background:#fff; padding:1rem; border-radius:8px; flex:1; min-width:180px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    .summary-card h3 { margin:0 0 0.5rem 0; font-size:1rem; color:#555; }
-    .summary-card p { font-size:1.25rem; font-weight:bold; margin:0; }
+    /* Header */
+    .content-header h1 { margin:0 0 5px; }
+    .content-header p { margin:0 0 20px; color:#555; }
 
-    .payment-table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    .payment-table th, .payment-table td { padding:12px; text-align:left; border-bottom:1px solid #e5e7eb; }
-    .payment-table th { background:#f1f5f9; cursor:pointer; }
-    .payment-table tbody tr:hover { background:#f9fafb; }
-    .status-pill { padding:4px 10px; border-radius:9999px; font-size:12px; font-weight:bold; }
-    .status-paid { background:#dcfce7; color:#166534; }
-    .status-pending { background:#fef3c7; color:#92400e; }
-    .no-payments { text-align:center; padding:20px; color:#777; }
-    .filter-search { display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
-    .filter-search input, .filter-search select { padding:0.5rem 0.75rem; border-radius:6px; border:1px solid #ccc; flex:1; min-width:150px; }
+    /* Summary cards */
+    .orders-summary { display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap; }
+    .summary-card { flex:1; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .summary-card h3 { margin:0 0 10px; }
+    .summary-number { font-size:1.5em; font-weight:bold; color:#3b82f6; }
+
+    /* Filters */
+    .orders-filter-section { display:flex; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+    .filter-tabs { display:flex; gap:10px; }
+    .filter-tab { padding:8px 15px; border:none; border-radius:5px; background:#e5e7eb; cursor:pointer; }
+    .filter-tab.active { background:#3b82f6; color:#fff; }
+    .search-box { display:flex; gap:5px; }
+    .search-box input { padding:8px; border-radius:5px; border:1px solid #ccc; }
+    .search-btn { padding:8px 12px; border:none; border-radius:5px; background:#3b82f6; color:#fff; cursor:pointer; }
+
+    /* Orders list */
+    .orders-list-container { margin-top:20px; }
+    .orders-list-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .sort-options select { padding:5px 10px; border-radius:5px; border:1px solid #ccc; }
+
+    .order-card { background:#fff; border-radius:8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+    .order-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .order-info h3 { margin:0; font-size:1.1em; }
+    .order-info p { margin:2px 0 0; font-size:0.85em; color:#555; }
+    .order-pricing { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .order-total { font-weight:bold; }
+    .order-status { padding:5px 10px; border-radius:5px; color:#fff; font-weight:bold; font-size:0.85em; }
+
+    /* Status colors */
+    .status-received { background:#f59e0b; }
+    .status-processing { background:#3b82f6; }
+    .status-ready { background:#10b981; }
+    .status-completed { background:#6b7280; }
+
+    .order-actions { margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; }
+    .action-btn { padding:6px 12px; border:none; border-radius:5px; cursor:pointer; font-size:0.85em; }
+    .pickup-btn { background:#10b981; color:#fff; }
+    .payment-btn { background:#f97316; color:#fff; }
+    .details-btn { background:#3b82f6; color:#fff; }
+
+    /* Expandable details */
+    .order-details { margin-top:10px; padding:10px; background:#f9fafb; border-radius:5px; display:none; }
+    .order-details.active { display:block; }
+
+    .no-orders { text-align:center; color:#555; padding:20px; background:#fff; border-radius:8px; }
+
+    @media(max-width:768px){
+        .orders-summary { flex-direction:column; }
+        .orders-filter-section { flex-direction:column; gap:10px; }
+        .order-header { flex-direction:column; align-items:flex-start; }
+        .order-pricing { flex-direction:column; align-items:flex-start; }
+    }
+
+    /* Payment Modal Styles */
+    .payment-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 20px;
+        box-sizing: border-box;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .payment-modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: 20px auto;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #e5e7eb;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .payment-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .close-payment-btn {
+        background: none;
+        border: none;
+        font-size: 28px;
+        color: white;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .close-payment-btn:hover {
+        background-color: rgba(255,255,255,0.2);
+    }
+
+    .payment-body {
+        padding: 24px;
+    }
+
+    .business-info {
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
+
+    .business-info h3 {
+        margin: 0 0 8px;
+        color: #1f2937;
+        font-size: 1.3rem;
+    }
+
+    .business-info p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .order-payment-details {
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+    }
+
+    .order-payment-details h4 {
+        margin: 0 0 16px;
+        color: #1f2937;
+        font-size: 1.1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-row.total-row {
+        border-top: 2px solid #374151;
+        margin-top: 8px;
+        padding-top: 12px;
+        font-weight: bold;
+    }
+
+    .total-amount {
+        color: #059669;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .payment-method {
+        margin-bottom: 24px;
+    }
+
+    .payment-method h4 {
+        margin: 0 0 16px;
+        color: #1f2937;
+        font-size: 1.1rem;
+    }
+
+    .payment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .payment-option {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .payment-option:hover {
+        border-color: #3b82f6;
+        background: #f0f9ff;
+    }
+
+    .payment-option input[type="radio"] {
+        display: none;
+    }
+
+    .payment-option input[type="radio"]:checked + .checkmark {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .payment-option input[type="radio"]:checked + .checkmark:after {
+        display: block;
+    }
+
+    .checkmark {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 50%;
+        margin-right: 12px;
+        position: relative;
+        transition: all 0.2s;
+    }
+
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        top: 3px;
+        left: 3px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: white;
+    }
+
+    .option-content strong {
+        display: block;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+
+    .option-content p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.85rem;
+    }
+
+    .payment-authorization {
+        margin-bottom: 24px;
+    }
+
+    .authorization-checkbox {
+        display: flex;
+        align-items: flex-start;
+        padding: 16px;
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .authorization-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    .authorization-checkbox input[type="checkbox"]:checked + .checkmark {
+        background: #059669;
+        border-color: #059669;
+    }
+
+    .authorization-checkbox input[type="checkbox"]:checked + .checkmark:after {
+        display: block;
+    }
+
+    .authorization-checkbox .checkmark {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #d1d5db;
+        border-radius: 4px;
+        margin-right: 12px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        background: white;
+    }
+
+    .authorization-checkbox .checkmark:after {
+        content: "✓";
+        position: absolute;
+        display: none;
+        top: -2px;
+        left: 3px;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .authorization-checkbox span {
+        color: #92400e;
+        font-size: 0.9rem;
+    }
+
+    .payment-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 20px 24px;
+        border-top: 1px solid #e5e7eb;
+        background: #f9fafb;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+    }
+
+    /* Confirmation Modal Styles */
+    .confirmation-modal {
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .confirmation-header {
+        padding: 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .confirmation-icon {
+        font-size: 3rem;
+        margin-bottom: 12px;
+    }
+
+    .confirmation-header h2 {
+        margin: 0;
+        font-size: 1.3rem;
+    }
+
+    .confirmation-body {
+        padding: 24px;
+    }
+
+    .payment-summary {
+        background: #f9fafb;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 16px 0;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+    }
+
+    .confirmation-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #e5e7eb;
+    }
 </style>
 </head>
 <body>
 <div class="dashboard-container">
-    <!-- Sidebar -->
     <nav class="sidebar">
         <h2 class="logo">DRY CLEANING</h2>
         <ul class="nav-menu">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
             <li><a href="cdashboard.html">Dashboard</a></li>
-            <li><a href="myOrders.html">My Orders</a></li>
+            <li class="active"><a href="myOrders.html">My Orders</a></li>
             <li><a href="profile.html">Profile</a></li>
-            <li class="active"><a href="payment-history.html">Payment History</a></li>
+            <li><a href="payment-history.html">Payment History</a></li>
             <li><a href="settings.html">Settings</a></li>
         </ul>
     </nav>
 
-    <!-- Main Content -->
     <main class="main-content">
         <header class="content-header">
-            <h1>Payment History</h1>
-            <p>Track all your payments here, including pending and completed orders.</p>
+            <h1>My Orders</h1>
+            <p>View and manage your dry cleaning orders</p>
         </header>
 
-        <!-- Summary Cards -->
-        <div class="summary-cards">
+        <div class="orders-summary">
             <div class="summary-card">
-                <h3>Total Payments</h3>
-                <p id="totalPayments">0</p>
+                <h3>Active Orders</h3>
+                <p class="summary-number" id="activeOrders">0</p>
             </div>
             <div class="summary-card">
-                <h3>Total Amount Paid</h3>
-                <p id="totalPaid">KES 0</p>
+                <h3>Ready for Pickup</h3>
+                <p class="summary-number" id="readyOrdersCount">0</p>
             </div>
             <div class="summary-card">
-                <h3>Pending Payments</h3>
-                <p id="totalPending">KES 0</p>
+                <h3>Total Completed</h3>
+                <p class="summary-number" id="completedOrders">0</p>
             </div>
             <div class="summary-card">
-                <h3>Last Payment</h3>
-                <p id="lastPayment">—</p>
+                <h3>Total Spent</h3>
+                <p class="summary-number" id="totalSpent">KES 0</p>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="filter-search">
-            <input type="text" id="searchInput" placeholder="Search by order ID or method">
-            <select id="statusFilter">
-                <option value="all">All</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-            </select>
+        <div class="orders-filter-section">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-status="all">All Orders</button>
+                <button class="filter-tab" data-status="received">Current</button>
+                <button class="filter-tab" data-status="ready">Ready for Pickup</button>
+                <button class="filter-tab" data-status="completed">Completed</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="orderSearch" placeholder="Search orders...">
+                <button class="search-btn">Search</button>
+            </div>
         </div>
 
-        <!-- Payment Table -->
-        <div style="overflow-x:auto;">
-            <table class="payment-table" id="paymentTable">
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Payment Method</th>
-                    </tr>
-                </thead>
-                <tbody id="paymentBody"></tbody>
-            </table>
+        <div class="orders-list-container">
+            <div class="orders-header">
+                <h2>My Orders</h2>
+            </div>
+            <div class="orders-list-header">
+                <div class="sort-options">
+                    <select id="sortOrders">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="status">By Status</option>
+                        <option value="price">By Price</option>
+                    </select>
+                </div>
+            </div>
+            <div class="orders-list" id="ordersList">
+                <div class="no-orders"><p>No orders yet.</p></div>
+            </div>
         </div>
-        <div id="noPayments" class="no-payments" style="display:none;">No payment records found.</div>
     </main>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="payment-modal">
+    <div class="payment-modal-content">
+        <div class="payment-header">
+            <h2>💳 Payment Confirmation</h2>
+            <button class="close-payment-btn" onclick="closePaymentModal()">&times;</button>
+        </div>
+        
+        <div class="payment-body">
+            <!-- Business Information -->
+            <div class="business-info">
+                <h3>🏢 Dry Cleaning 2</h3>
+                <p>Professional Dry Cleaning Services</p>
+            </div>
+            
+            <!-- Order Details -->
+            <div class="order-payment-details">
+                <h4>📋 Order Details</h4>
+                <div class="detail-row">
+                    <strong>Order Number:</strong>
+                    <span id="paymentOrderNumber">#ORD-123456</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Order Status:</strong>
+                    <span id="paymentOrderStatus" class="status-badge">Completed</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Items:</strong>
+                    <span id="paymentOrderItems">2 x Shirt, 1 x Pants</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Quantity:</strong>
+                    <span id="paymentOrderQuantity">3 items</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Subtotal:</strong>
+                    <span id="paymentSubtotal">KES 450</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Service Fee:</strong>
+                    <span id="paymentServiceFee">KES 50</span>
+                </div>
+                <div class="detail-row total-row">
+                    <strong>Total Amount:</strong>
+                    <span id="paymentTotalAmount" class="total-amount">KES 500</span>
+                </div>
+                <div class="detail-row">
+                    <strong>Progress:</strong>
+                    <span id="paymentProgress">✅ Completed - Ready for Payment</span>
+                </div>
+            </div>
+            
+            <!-- Payment Method -->
+            <div class="payment-method">
+                <h4>💳 Payment Method</h4>
+                <div class="payment-options">
+                    <label class="payment-option">
+                        <input type="radio" name="paymentMethod" value="m-pesa" checked>
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>M-Pesa</strong>
+                            <p>Pay via M-Pesa mobile money</p>
+                        </div>
+                    </label>
+                    <label class="payment-option">
+                        <input type="radio" name="paymentMethod" value="cash">
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Cash on Pickup</strong>
+                            <p>Pay when picking up your order</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Authorization -->
+            <div class="payment-authorization">
+                <label class="authorization-checkbox">
+                    <input type="checkbox" id="authorizePayment">
+                    <span class="checkmark"></span>
+                    <span>I confirm and authorize this payment for the specified order amount</span>
+                </label>
+            </div>
+        </div>
+        
+        <div class="payment-footer">
+            <button class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+            <button class="btn btn-primary" id="confirmPaymentBtn" onclick="confirmPayment()" disabled>
+                Confirm Payment
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Confirmation Modal -->
+<div id="paymentConfirmationModal" class="payment-modal">
+    <div class="payment-modal-content confirmation-modal">
+        <div class="confirmation-header">
+            <div id="confirmationIcon" class="confirmation-icon">⏳</div>
+            <h2 id="confirmationTitle">Processing Payment...</h2>
+        </div>
+        
+        <div class="confirmation-body">
+            <p id="confirmationMessage">Please wait while we process your payment.</p>
+            <div id="paymentDetails" class="payment-summary">
+                <div class="summary-row">
+                    <strong>Order:</strong>
+                    <span id="summaryOrderNumber">#ORD-123456</span>
+                </div>
+                <div class="summary-row">
+                    <strong>Amount:</strong>
+                    <span id="summaryAmount">KES 500</span>
+                </div>
+                <div class="summary-row">
+                    <strong>Method:</strong>
+                    <span id="summaryMethod">M-Pesa</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="confirmation-footer">
+            <button class="btn btn-primary" id="confirmationBtn" onclick="closeConfirmationModal()" style="display: none;">
+                OK
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
 const API_BASE = 'http://localhost:5002';
-const formatKES = amount => `KES ${Number(amount).toLocaleString('en-KE')}`;
+const statusConfig = {
+    'received': { text: 'Received', class: 'status-received' },
+    'processing': { text: 'In Progress', class: 'status-processing' },
+    'ready': { text: 'Ready for Pickup', class: 'status-ready' },
+    'completed': { text: 'Completed', class: 'status-completed' }
+};
 
-let payments = [];
+let ordersData = {
+    userName: "",
+    stats: { currentOrders:0, readyOrders:0, totalOrders:0, completedOrders:0, totalRevenue:0 },
+    orderQueue: [],
+    activities: ["System ready - No orders yet"],
+    nextOrderId: 1001
+};
 
-async function loadPayments() {
-    try {
-        const userId = localStorage.getItem('userId');
-        const authToken = localStorage.getItem('authToken');
-        
-        if (!userId || !authToken) {
-            console.log('User not authenticated');
-            return showNoPayments();
-        }
+function formatCurrency(amount){ return `KES ${amount.toLocaleString('en-KE')}`; }
 
-        // Fetch payments from the backend
-        const response = await fetch(`${API_BASE}/api/payment/customer/${userId}`, {
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        });
+function initializeOrdersPage(){
+    loadOrdersData();
+    setupEventListeners();
+    updateOrdersSummary();
+    displayOrders();
+    startLiveSync();
+}
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch payment history');
-        }
-
-        let paymentsData = await response.json();
-        
-        // Map the payment data to match the expected format (include both paid and pending)
-        payments = paymentsData.map(payment => {
-            const isPaid = payment.status === 'Completed' || payment.status === 'Paid';
-            return {
-                id: payment._id,
-                total: payment.amount,
-                date: payment.date || new Date().toISOString(),
-                paid: isPaid,
-                statusText: isPaid ? 'Paid' : (payment.status || 'Pending'),
-                paymentMethod: payment.method || '—',
-                orderId: payment.orderId
-            };
-        });
-
-        if (!payments.length) {
-            return showNoPayments();
-        }
-
-        renderPayments(payments);
-        updateSummary(payments);
-    } catch (error) {
-        console.error('Error loading payment history:', error);
-        showNoPayments();
+function loadOrdersData(){
+    // Get user-specific data for logged-in customer
+    const userId = localStorage.getItem('userId');
+    console.log('Loading orders for userId:', userId);
+    if (!userId) {
+        console.log('No user logged in - showing empty orders');
+        return;
+    }
+    
+    const userSpecificKey = `dashboardData_${userId}`;
+    console.log('Looking for key:', userSpecificKey);
+    const saved = localStorage.getItem(userSpecificKey);
+    console.log('Found data:', saved ? 'Yes' : 'No');
+    
+    if(saved) {
+        const data = JSON.parse(saved);
+        console.log('Parsed data:', data);
+        console.log('Order queue length:', data.orderQueue?.length || 0);
+        // Use the user-specific dashboardData structure
+        ordersData = data;
+        console.log('Loaded', data.orderQueue?.length || 0, 'orders for user', userId);
+    } else {
+        console.log('No orders found for user', userId);
     }
 }
 
-// Render table rows
-function renderPayments(list) {
-    const tbody = document.getElementById('paymentBody');
-    if (!list || !list.length) return showNoPayments();
-    document.getElementById('noPayments').style.display = 'none';
-    tbody.innerHTML = list.map(p => `
-        <tr>
-            <td>#${p.id}</td>
-            <td>${formatKES(p.total)}</td>
-            <td>${new Date(p.date).toLocaleString()}</td>
-            <td><span class="status-pill ${p.paid ? 'status-paid' : 'status-pending'}">${p.statusText}</span></td>
-            <td>${p.paymentMethod}</td>
-        </tr>
-    `).join('');
+function setupEventListeners(){
+    document.querySelectorAll('.filter-tab').forEach(tab=>{
+        tab.addEventListener('click', function(){
+            document.querySelectorAll('.filter-tab').forEach(t=>t.classList.remove('active'));
+            this.classList.add('active');
+            filterOrders(this.getAttribute('data-status'));
+        });
+    });
+    document.querySelector('.search-btn').addEventListener('click', ()=>searchOrders(document.getElementById('orderSearch').value));
+    document.getElementById('orderSearch').addEventListener('input', e=>searchOrders(e.target.value));
+    document.getElementById('sortOrders').addEventListener('change', e=>sortOrders(e.target.value));
+    
+    // Payment authorization checkbox listener
+    document.getElementById('authorizePayment').addEventListener('change', function() {
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        confirmBtn.disabled = !this.checked;
+    });
 }
 
-// Update summary cards
-function updateSummary(list) {
-    const totalPayments = list.length;
-    const totalPaid = list.filter(p => p.paid).reduce((sum, p) => sum + Number(p.total),0);
-    const totalPending = list.filter(p => !p.paid).reduce((sum, p) => sum + Number(p.total),0);
-    const last = list.filter(p => p.paid).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
-
-    document.getElementById('totalPayments').textContent = totalPayments;
-    document.getElementById('totalPaid').textContent = formatKES(totalPaid);
-    document.getElementById('totalPending').textContent = formatKES(totalPending);
-    document.getElementById('lastPayment').textContent = last ? `${formatKES(last.total)} on ${new Date(last.date).toLocaleString()}` : '—';
+function updateOrdersSummary(){
+    const stats = ordersData.stats;
+    document.getElementById('activeOrders').textContent = stats.currentOrders || 0;
+    document.getElementById('readyOrdersCount').textContent = stats.readyOrders || 0;
+    document.getElementById('completedOrders').textContent = stats.completedOrders || 0;
+    const totalSpent = ordersData.orderQueue.filter(o=>o.status==='completed' && !o.paid).reduce((sum,o)=>sum+(o.total||0),0);
+    document.getElementById('totalSpent').textContent = formatCurrency(totalSpent);
 }
 
-// Show placeholder if no payments exist
-function showNoPayments() {
-    document.getElementById('paymentBody').innerHTML = '';
-    document.getElementById('noPayments').style.display = 'block';
-    document.getElementById('totalPayments').textContent = '0';
-    document.getElementById('totalPaid').textContent = 'KES 0';
-    document.getElementById('totalPending').textContent = 'KES 0';
-    document.getElementById('lastPayment').textContent = '—';
+function displayOrders(ordersToDisplay=null){
+    const ordersList = document.getElementById('ordersList');
+    const orders = ordersToDisplay || ordersData.orderQueue || [];
+    if(!orders.length){ 
+        ordersList.innerHTML='<div class="no-orders"><p>No orders yet.</p></div>'; 
+        return; 
+    }
+    const sorted = [...orders].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+    ordersList.innerHTML = sorted.map(o=>createOrderCard(o)).join('');
 }
 
-// Search and filter
-document.getElementById('searchInput').addEventListener('input', applyFilters);
-document.getElementById('statusFilter').addEventListener('change', applyFilters);
-
-function applyFilters() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const status = document.getElementById('statusFilter').value;
-    let filtered = [...payments];
-
-    if (status === 'paid') filtered = filtered.filter(p => p.paid);
-    else if (status === 'pending') filtered = filtered.filter(p => !p.paid);
-
-    if (query) filtered = filtered.filter(p =>
-        p.id.toString().includes(query) || (p.paymentMethod||'').toLowerCase().includes(query)
-    );
-
-    renderPayments(filtered);
-    updateSummary(filtered);
+function createOrderCard(order){
+    const status = statusConfig[order.status] || statusConfig.received;
+    const orderDate = new Date(order.timestamp).toLocaleDateString();
+    const orderTotal = order.total ? formatCurrency(order.total) : 'KES 0';
+    return `
+    <div class="order-card" data-order-id="${order.id}">
+        <div class="order-header">
+            <div class="order-info">
+                <h3>Order #${order.id}</h3>
+                <p>Placed on ${orderDate}</p>
+            </div>
+            <div class="order-pricing">
+                <span class="order-total">${orderTotal}</span>
+                <span class="order-status ${status.class}">${status.text}</span>
+            </div>
+        </div>
+        <div class="order-actions">
+            ${order.status==='ready'?`<button class="action-btn pickup-btn" onclick="simulatePickup('${order.id}')">Mark as Picked Up</button>`:''}
+            ${(!order.paid || order.paymentStatus === 'pending' || order.paymentStatus === 'Pending')?`<button class="action-btn payment-btn" onclick="makePayment('${order.id}')">Pay Now</button>`:''}
+            <button class="action-btn details-btn" onclick="toggleOrderDetails('${order.id}')">View Details</button>
+        </div>
+        <div class="order-details" id="details-${order.id}">
+            <strong>Items:</strong><br>
+            ${order.items.map(i=>`${i.quantity} x ${i.type}`).join('<br>')}<br>
+            <strong>Timestamp:</strong> ${new Date(order.timestamp).toLocaleString()}<br>
+            <strong>Total:</strong> ${orderTotal}
+        </div>
+    </div>`;
 }
 
-document.addEventListener('DOMContentLoaded', loadPayments);
+function filterOrders(status){
+    if(status==='all') return displayOrders();
+    displayOrders(ordersData.orderQueue.filter(o=>o.status===status));
+}
+
+function searchOrders(query){
+    if(!query.trim()) return displayOrders();
+
+    const q = query.toLowerCase();
+
+    const filtered = ordersData.orderQueue.filter(o => {
+        // match by order id
+        const idMatch = o.id && o.id.toString().toLowerCase().includes(q);
+
+        // match by item type (e.g. "shirt", "pants")
+        const itemsMatch = o.items && o.items.some(i =>
+            i.type && i.type.toLowerCase().includes(q)
+        );
+
+        // match by status text (received, processing, ready, completed)
+        const statusMatch = (o.status || '').toLowerCase().includes(q);
+
+        // match by total amount text (e.g. "500" or "KES 500")
+        const amountValue = o.total || 0;
+        const amountText = formatCurrency(amountValue).toLowerCase();
+        const amountMatch = amountText.includes(q) || amountValue.toString().includes(q);
+
+        return idMatch || itemsMatch || statusMatch || amountMatch;
+    });
+
+    displayOrders(filtered);
+}
+
+function sortOrders(sortBy){
+    const orders = [...ordersData.orderQueue];
+    switch(sortBy){
+        case 'newest': orders.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)); break;
+        case 'oldest': orders.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp)); break;
+        case 'status': orders.sort((a,b)=>a.status.localeCompare(b.status)); break;
+        case 'price': orders.sort((a,b)=>(b.total||0)-(a.total||0)); break;
+    }
+    displayOrders(orders);
+}
+
+function simulatePickup(orderId){
+    // Get user-specific key
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
+    const idx = ordersData.orderQueue.findIndex(o=>o.id===orderId);
+    if(idx!==-1){
+        ordersData.orderQueue[idx].status='completed';
+        ordersData.orderQueue[idx].paid = false;
+        ordersData.stats.readyOrders--;
+        ordersData.stats.completedOrders++;
+        
+        // Save to user-specific localStorage
+        const userSpecificKey = `dashboardData_${userId}`;
+        localStorage.setItem(userSpecificKey, JSON.stringify(ordersData));
+        
+        updateOrdersSummary(); displayOrders();
+        alert(`Order #${orderId} marked as picked up!`);
+    }
+}
+
+async function makePayment(orderId){
+    const order = ordersData.orderQueue.find(o=>o.id===orderId);
+    if(!order) return alert('Order not found!');
+    
+    // Populate payment modal with order details
+    populatePaymentModal(order);
+    
+    // Show payment modal
+    document.getElementById('paymentModal').style.display = 'block';
+}
+
+function populatePaymentModal(order) {
+    // Calculate service fee (10% of subtotal)
+    const subtotal = order.total || 0;
+    const serviceFee = Math.round(subtotal * 0.1);
+    const totalAmount = subtotal + serviceFee;
+    
+    // Format items string
+    const itemsString = order.items ? order.items.map(item => `${item.quantity} x ${item.type}`).join(', ') : 'No items';
+    
+    // Calculate total quantity
+    const totalQuantity = order.items ? order.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+    
+    // Update modal content
+    document.getElementById('paymentOrderNumber').textContent = `#${order.id}`;
+    document.getElementById('paymentOrderStatus').textContent = order.status || 'Completed';
+    document.getElementById('paymentOrderItems').textContent = itemsString;
+    document.getElementById('paymentOrderQuantity').textContent = `${totalQuantity} items`;
+    document.getElementById('paymentSubtotal').textContent = formatCurrency(subtotal);
+    document.getElementById('paymentServiceFee').textContent = formatCurrency(serviceFee);
+    document.getElementById('paymentTotalAmount').textContent = formatCurrency(totalAmount);
+    
+    // Set progress based on status
+    const progressText = getOrderProgressText(order.status);
+    document.getElementById('paymentProgress').textContent = progressText;
+    
+    // Store order data for payment processing
+    document.getElementById('paymentModal').setAttribute('data-order-id', order.id);
+    document.getElementById('paymentModal').setAttribute('data-total-amount', totalAmount);
+}
+
+function getOrderProgressText(status) {
+    switch(status) {
+        case 'received': return '📥 Order Received - Processing started';
+        case 'processing': return '🔄 In Progress - Being cleaned';
+        case 'ready': return '✅ Ready for Pickup - Awaiting payment';
+        case 'completed': return '✅ Completed - Ready for Payment';
+        default: return '✅ Ready for Payment';
+    }
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    // Reset authorization checkbox
+    document.getElementById('authorizePayment').checked = false;
+    document.getElementById('confirmPaymentBtn').disabled = true;
+}
+
+function confirmPayment() {
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    const orderId = document.getElementById('paymentOrderNumber').textContent.replace('#', '');
+    const amountText = document.getElementById('paymentTotalAmount').textContent;
+    const amount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
+    
+    // Close payment modal and show confirmation modal
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('paymentConfirmationModal').style.display = 'block';
+    
+    if (paymentMethod === 'm-pesa') {
+        // Show M-Pesa instructions immediately
+        showMpesaInstructions(orderId, amount);
+    } else {
+        // Handle cash payment
+        showCashConfirmation(orderId, amount);
+    }
+}
+
+function populateConfirmationModal(orderId, totalAmount, paymentMethod) {
+    const methodText = paymentMethod === 'm-pesa' ? 'M-Pesa' : 
+                      paymentMethod === 'card' ? 'Card Payment' : 'Cash on Pickup';
+    
+    document.getElementById('summaryOrderNumber').textContent = `#${orderId}`;
+    document.getElementById('summaryAmount').textContent = formatCurrency(totalAmount);
+    document.getElementById('summaryMethod').textContent = methodText;
+}
+
+function showMpesaInstructions(orderId, amount) {
+    const modal = document.getElementById('paymentConfirmationModal');
+    
+    // Set the modal content
+    document.getElementById('confirmationIcon').textContent = '📱';
+    document.getElementById('confirmationTitle').textContent = 'Pay via M-Pesa';
+    
+    // Create the M-Pesa instructions HTML
+    document.getElementById('confirmationMessage').innerHTML = `
+        <div style="max-width: 500px; margin: 0 auto;">
+            <p>To complete your payment, please follow these instructions:</p>
+            <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">Order #:</div>
+                    <div>${orderId}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">Amount to Pay:</div>
+                    <div style="font-weight: bold; color: #065f46;">${formatCurrency(amount)}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: 500;">M-Pesa Number:</div>
+                    <div style="font-weight: bold;">0714788630</div>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <div style="font-weight: 500;">Account Name:</div>
+                    <div>Dry Cleaning Service</div>
+                </div>
+            </div>
+            
+            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #1f2937; font-size: 1.1em;">How to Pay via M-Pesa:</h4>
+                <ol style="margin: 0; padding-left: 20px; color: #4b5563;">
+                    <li style="margin-bottom: 8px;">Go to <strong>M-Pesa</strong> on your phone</li>
+                    <li style="margin-bottom: 8px;">Select <strong>Send Money</strong></li>
+                    <li style="margin-bottom: 8px;">Enter phone number: <strong>0714788630</strong></li>
+                    <li style="margin-bottom: 8px;">Enter amount: <strong>${formatCurrency(amount)}</strong></li>
+                    <li style="margin-bottom: 8px;">Enter your M-Pesa PIN</li>
+                    <li>Press OK and wait for confirmation</li>
+                </ol>
+            </div>
+            
+            <div id="paymentStatusMessage" style="margin: 20px 0; padding: 10px; background: #f8fafc; border-radius: 6px; text-align: center;">
+                After completing the payment, click the button below to confirm
+            </div>
+        </div>
+    `;
+    
+    // Set up the confirmation button
+    const confirmBtn = document.getElementById('confirmationBtn');
+    confirmBtn.style.display = 'block';
+    confirmBtn.textContent = 'I have completed the payment';
+    confirmBtn.style.margin = '10px auto';
+    confirmBtn.onclick = function() {
+        processPaymentConfirmation(orderId, amount, 'mpesa');
+    };
+    
+    // Show the modal
+    modal.style.display = 'block';
+}
+
+async function processPaymentConfirmation(orderId, amount, method) {
+    try {
+        // Update order status immediately
+        const order = ordersData.orderQueue.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'paid';
+            order.paymentMethod = 'M-Pesa';
+            displayOrders();
+        }
+
+        // Also record this payment in the backend so it appears in Payment History
+        try {
+            const authToken = localStorage.getItem('authToken');
+            const response = await fetch(`${API_BASE}/api/payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authToken ? `Bearer ${authToken}` : ''
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    amount: amount,
+                    method: 'mpesa'
+                })
+            });
+
+            if (!response.ok) {
+                console.warn('M-Pesa payment record not saved to backend');
+            }
+        } catch (e) {
+            console.warn('Error calling backend payment API for M-Pesa:', e);
+        }
+        
+        // Update the status message to indicate the payment was recorded
+        const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.innerHTML = '<strong>Thank you! Your payment has been recorded. You can still use the M-Pesa instructions above for reference.</strong>';
+            statusMessage.style.color = 'green';
+        }
+
+        // Show an OK button so the user can go back to My Orders
+        const confirmBtn = document.getElementById('confirmationBtn');
+        if (confirmBtn) {
+            confirmBtn.style.display = 'block';
+            confirmBtn.textContent = 'OK';
+            confirmBtn.onclick = function() {
+                closeConfirmationModal();
+            };
+        }
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        showPaymentFailed('Failed to process payment. Please try again or contact support.');
+    }
+}
+
+async function processPayment(orderId, amount, method) {
+    try {
+        // This function is now only called for non-M-Pesa payments
+        // M-Pesa flow is now handled directly in confirmPayment()
+        
+        // For other payment methods, show processing state
+        document.getElementById('confirmationIcon').textContent = '⏳';
+        document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
+        document.getElementById('confirmationMessage').textContent = 'Please wait while we process your payment...';
+        
+        // Call backend payment API
+        const response = await fetch(`${API_BASE}/api/payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                amount: amount,
+                method: method
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            // Payment successful
+            showPaymentSuccess(orderId, amount, method);
+            
+            // Update local order data
+            const orderIndex = ordersData.orderQueue.findIndex(o => o.id === orderId);
+            if (orderIndex !== -1) {
+                ordersData.orderQueue[orderIndex].paid = true;
+                ordersData.orderQueue[orderIndex].paymentMethod = method;
+                ordersData.orderQueue[orderIndex].paymentStatus = 'paid';
+                
+                // Save to user-specific localStorage
+                const userId = localStorage.getItem('userId');
+                if (userId) {
+                    const userSpecificKey = `dashboardData_${userId}`;
+                    localStorage.setItem(userSpecificKey, JSON.stringify(ordersData));
+                }
+                
+                updateOrdersSummary();
+                displayOrders();
+            }
+            
+        } else {
+            // Payment failed or pending
+            if (method === 'cash') {
+                showCashConfirmation(orderId, amount);
+            } else {
+                showPaymentFailed(result.message || 'Payment processing failed');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        showPaymentFailed('Network error - payment failed. Please try again.');
+    }
+}
+
+function showPaymentSuccess(orderId, amount, method) {
+    if (method === 'cash') {
+        document.getElementById('confirmationIcon').textContent = '✅';
+        document.getElementById('confirmationTitle').textContent = 'Cash on Pickup Confirmed!';
+        document.getElementById('confirmationMessage').innerHTML = 
+            `You will pay ${formatCurrency(amount)} when picking up your order. Thank you for choosing Dry Cleaning 2!`;
+        document.getElementById('confirmationBtn').textContent = 'Done';
+        document.getElementById('confirmationBtn').style.display = 'block';
+    } else {
+        // For M-Pesa, show the payment instructions
+        showMpesaInstructions(orderId, amount);
+        
+        // Update the status message to show payment was recorded
+        const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.innerHTML = '<strong>✓ Payment recorded! Please complete the M-Pesa transaction using the instructions above.</strong>';
+            statusMessage.style.color = 'green';
+        }
+        
+        // Update the confirm button
+        const confirmBtn = document.getElementById('confirmationBtn');
+        confirmBtn.style.display = 'block';
+        confirmBtn.textContent = 'I have completed the payment';
+        confirmBtn.onclick = function() {
+            // Close the modal after payment is confirmed
+            closeConfirmationModal();
+        };
+    }
+}
+
+function showCashConfirmation(orderId, amount) {
+    document.getElementById('confirmationIcon').textContent = '💵';
+    document.getElementById('confirmationTitle').textContent = 'Cash on Pickup';
+    document.getElementById('confirmationMessage').textContent = 
+        `You will pay ${formatCurrency(amount)} when you pick up your order.`;
+    
+    // Update payment details to show cash info
+    const paymentDetails = document.getElementById('paymentDetails');
+    paymentDetails.innerHTML = `
+        <div class="summary-row">
+            <strong>Order:</strong>
+            <span>#${orderId}</span>
+        </div>
+        <div class="summary-row">
+            <strong>Amount:</strong>
+            <span>${formatCurrency(amount)}</span>
+        </div>
+        <div class="summary-row">
+            <strong>Payment Method:</strong>
+            <span>Cash on Pickup</span>
+        </div>
+        <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #4CAF50;">
+            <p style="margin: 0; font-size: 14px; color: #333;">
+                <strong>Instructions:</strong><br>
+                Please have the exact amount ready when you come to collect your order.
+            </p>
+        </div>
+    `;
+    
+    document.getElementById('confirmationBtn').style.display = 'block';
+}
+
+function showPaymentFailed(errorMessage) {
+    document.getElementById('confirmationIcon').textContent = '💰';
+    document.getElementById('confirmationTitle').textContent = 'Pay via M-Pesa';
+    document.getElementById('confirmationMessage').textContent = 
+        `To complete your payment, please send the amount to the following M-Pesa number:`;
+    
+    // Add M-Pesa payment instructions
+    const paymentDetails = document.getElementById('paymentDetails');
+    paymentDetails.innerHTML = `
+        <div class="summary-row">
+            <strong>Order:</strong>
+            <span id="summaryOrderNumber">#ORD-123456</span>
+        </div>
+        <div class="summary-row">
+            <strong>Amount:</strong>
+            <span id="summaryAmount">KES 500</span>
+        </div>
+        <div class="summary-row">
+            <strong>M-Pesa Number:</strong>
+            <span style="font-size: 18px; font-weight: bold; color: #4CAF50;">0714788630</span>
+        </div>
+        <div class="summary-row">
+            <strong>Account Name:</strong>
+            <span>Dry Cleaning Service</span>
+        </div>
+        <div style="margin-top: 15px; padding: 10px; background: #f0f8ff; border-radius: 5px; border-left: 4px solid #4CAF50;">
+            <p style="margin: 0; font-size: 14px; color: #333;">
+                <strong>Instructions:</strong><br>
+                1. Go to M-Pesa menu on your phone<br>
+                2. Select "Send Money"<br>
+                3. Enter number: <strong>0714788630</strong><br>
+                4. Enter the amount shown above<br>
+                5. Confirm and send payment
+            </p>
+        </div>
+    `;
+    
+    document.getElementById('confirmationBtn').style.display = 'block';
+}
+
+function closeConfirmationModal() {
+    const modal = document.getElementById('paymentConfirmationModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Clear the confirmation message
+    const statusMessage = document.getElementById('paymentStatusMessage');
+    if (statusMessage) {
+        statusMessage.innerHTML = '';
+        statusMessage.style.color = '';
+    }
+    
+    // Reset the confirmation button
+    const confirmBtn = document.getElementById('confirmationBtn');
+    if (confirmBtn) {
+        confirmBtn.style.display = 'none';
+        confirmBtn.onclick = null;
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.disabled = false;
+    }
+    
+    // Reset modal content to default
+    document.getElementById('confirmationIcon').textContent = '⏳';
+    document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
+    document.getElementById('confirmationMessage').innerHTML = 'Please wait while we process your request...';
+    
+    // Reload orders to reflect any changes
+    loadOrdersData();
+    displayOrders();
+    
+    // If we're on the payment history page, refresh it
+    if (window.location.pathname.includes('payment-history.html')) {
+        // Check if loadPayments function exists (from payment-history.html)
+        if (typeof loadPayments === 'function') {
+            loadPayments();
+        }
+    }
+}
+
+function toggleOrderDetails(orderId){
+    const details = document.getElementById(`details-${orderId}`);
+    details.classList.toggle('active');
+}
+
+function startLiveSync(){
+    setInterval(()=>{
+        // Get user-specific data
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+        
+        const userSpecificKey = `dashboardData_${userId}`;
+        const latestData = localStorage.getItem(userSpecificKey);
+        if(latestData){
+            const parsed = JSON.parse(latestData);
+            if(JSON.stringify(parsed.orderQueue) !== JSON.stringify(ordersData.orderQueue)){
+                ordersData = parsed;
+                updateOrdersSummary();
+                displayOrders();
+            }
+        }
+    },2000);
+}
+
+document.addEventListener('DOMContentLoaded', initializeOrdersPage);
 </script>
 </body>
 </html>

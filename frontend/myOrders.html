@@ -879,19 +879,22 @@ function closePaymentModal() {
 }
 
 function confirmPayment() {
-    const orderId = document.getElementById('paymentModal').getAttribute('data-order-id');
-    const totalAmount = document.getElementById('paymentModal').getAttribute('data-total-amount');
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    const orderId = document.getElementById('paymentOrderNumber').textContent.replace('#', '');
+    const amountText = document.getElementById('paymentTotalAmount').textContent;
+    const amount = parseFloat(amountText.replace(/[^0-9.]/g, ''));
     
-    // Close payment modal
-    closePaymentModal();
-    
-    // Show confirmation modal
-    populateConfirmationModal(orderId, totalAmount, paymentMethod);
+    // Close payment modal and show confirmation modal
+    document.getElementById('paymentModal').style.display = 'none';
     document.getElementById('paymentConfirmationModal').style.display = 'block';
     
-    // Process payment
-    processPayment(orderId, totalAmount, paymentMethod);
+    if (paymentMethod === 'm-pesa') {
+        // Show M-Pesa instructions immediately
+        showMpesaInstructions(orderId, amount);
+    } else {
+        // Handle cash payment
+        showCashConfirmation(orderId, amount);
+    }
 }
 
 function populateConfirmationModal(orderId, totalAmount, paymentMethod) {
@@ -903,10 +906,131 @@ function populateConfirmationModal(orderId, totalAmount, paymentMethod) {
     document.getElementById('summaryMethod').textContent = methodText;
 }
 
+function showMpesaInstructions(orderId, amount) {
+    document.getElementById('confirmationIcon').textContent = '📱';
+    document.getElementById('confirmationTitle').textContent = 'Pay via M-Pesa';
+    // Show the modal if it's not already visible
+    document.getElementById('paymentConfirmationModal').style.display = 'block';
+    document.getElementById('confirmationMessage').innerHTML = `
+        <p>To complete your payment, please send the amount to the following M-Pesa number:</p>
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <div style="margin-bottom: 10px;">
+                <strong>Order:</strong> #${orderId}
+            </div>
+            <div style="margin-bottom: 10px;">
+                <strong>Amount:</strong> ${formatCurrency(amount)}
+            </div>
+            <div style="margin-bottom: 10px;">
+                <strong>M-Pesa Number:</strong> 0714788630
+            </div>
+            <div>
+                <strong>Account Name:</strong> Dry Cleaning Service
+            </div>
+        </div>
+        <div style="margin: 25px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid #28a745;">
+            <h4 style="margin: 0 0 15px 0; color: #28a745; font-size: 1.2em;">
+                <i class="fas fa-mobile-alt" style="margin-right: 8px;"></i>
+                M-Pesa Payment Instructions
+            </h4>
+            <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; font-family: 'Courier New', monospace; font-size: 1.05em; line-height: 1.6;">
+                <div style="margin-bottom: 12px;">1️⃣ <strong>Go to M-Pesa menu</strong> on your phone</div>
+                <div style="margin-bottom: 12px;">2️⃣ Select <strong>"Send Money"</strong></div>
+                <div style="margin-bottom: 12px;">3️⃣ Enter M-Pesa number: <strong style="color: #007bff;">0714788630</strong></div>
+                <div style="margin-bottom: 12px;">4️⃣ Enter amount: <strong style="color: #dc3545;">${formatCurrency(amount)}</strong></div>
+                <div>5️⃣ <strong>Confirm and send</strong> the payment</div>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 4px; color: #2e7d32; font-size: 0.95em;">
+                <i class="fas fa-info-circle"></i> Complete the payment, then click the button below to confirm
+            </div>
+        </div>
+        <p style="margin-top: 20px; font-style: italic;" id="paymentStatusMessage">
+            After completing the payment, click the button below to confirm your payment.
+        </p>
+    `;
+    
+    const confirmBtn = document.getElementById('confirmationBtn');
+    confirmBtn.style.display = 'block';
+    confirmBtn.textContent = 'I have completed the payment';
+    confirmBtn.onclick = function() {
+        // Update order status immediately
+        const order = ordersData.orderQueue.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'paid';
+            order.paymentMethod = 'M-Pesa';
+            displayOrders();
+        }
+        
+        // Show success state with checkmark
+        document.getElementById('confirmationIcon').textContent = '✓';
+        document.getElementById('confirmationTitle').textContent = 'Payment Recorded';
+        
+        // Keep the M-Pesa instructions visible
+        document.getElementById('confirmationMessage').innerHTML = `
+            <div style="white-space: pre-line; font-family: monospace; margin-bottom: 20px;">
+                <strong>M-Pesa Payment Instructions:</strong>
+                
+Go to M-Pesa menu on your phone
+Select "Send Money"
+Enter the M-Pesa number: <strong>0714788630</strong>
+Enter the amount: <strong>${formatCurrency(amount)}</strong>
+Confirm and send the payment
+            </div>
+            <p style="color: green; font-weight: bold;">✓ Your payment has been recorded. Please complete the M-Pesa transaction.</p>
+        `;
+        
+        // Hide the confirm button
+        confirmBtn.style.display = 'none';
+        
+        // Close modal after delay
+        setTimeout(closeConfirmationModal, 3000);
+    };
+}
+
+async function processPaymentConfirmation(orderId, amount, method) {
+    try {
+        // Show processing state
+        document.getElementById('confirmationIcon').textContent = '⏳';
+        document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
+        document.getElementById('confirmationMessage').innerHTML = `
+            <p>Please wait while we process your M-Pesa payment...</p>
+        `;
+        document.getElementById('confirmationBtn').style.display = 'none';
+
+        // Simulate API call to verify payment
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+        
+        // Update order status in the UI
+        const order = ordersData.orderQueue.find(o => o.id === orderId);
+        if (order) {
+            order.status = 'paid';
+            order.paymentMethod = 'M-Pesa';
+            displayOrders();
+        }
+        
+        // Show M-Pesa instructions after processing
+        showMpesaInstructions(orderId, amount);
+        
+        // Update the status message to show payment was recorded
+        const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.innerHTML = '<strong>✓ Payment recorded! Please complete the M-Pesa transaction using the instructions above.</strong>';
+            statusMessage.style.color = 'green';
+        }
+    } catch (error) {
+        console.error('Payment processing error:', error);
+        showPaymentFailed('Failed to process payment. Please try again or contact support.');
+    }
+}
+
 async function processPayment(orderId, amount, method) {
     try {
-        // Simulate payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // This function is now only called for non-M-Pesa payments
+        // M-Pesa flow is now handled directly in confirmPayment()
+        
+        // For other payment methods, show processing state
+        document.getElementById('confirmationIcon').textContent = '⏳';
+        document.getElementById('confirmationTitle').textContent = 'Processing Payment...';
+        document.getElementById('confirmationMessage').textContent = 'Please wait while we process your payment...';
         
         // Call backend payment API
         const response = await fetch(`${API_BASE}/api/payment`, {
@@ -929,8 +1053,8 @@ async function processPayment(orderId, amount, method) {
             showPaymentSuccess(orderId, amount, method);
             
             // Update local order data
-            const orderIndex = ordersData.orderQueue.findIndex(o=>o.id===orderId);
-            if(orderIndex !== -1) {
+            const orderIndex = ordersData.orderQueue.findIndex(o => o.id === orderId);
+            if (orderIndex !== -1) {
                 ordersData.orderQueue[orderIndex].paid = true;
                 ordersData.orderQueue[orderIndex].paymentMethod = method;
                 ordersData.orderQueue[orderIndex].paymentStatus = 'paid';
@@ -957,22 +1081,38 @@ async function processPayment(orderId, amount, method) {
         
     } catch (error) {
         console.error('Payment error:', error);
-        showPaymentFailed('Network error - payment failed');
+        showPaymentFailed('Network error - payment failed. Please try again.');
     }
 }
 
 function showPaymentSuccess(orderId, amount, method) {
-    document.getElementById('confirmationIcon').textContent = '✅';
     if (method === 'cash') {
+        document.getElementById('confirmationIcon').textContent = '✅';
         document.getElementById('confirmationTitle').textContent = 'Cash on Pickup Confirmed!';
-        document.getElementById('confirmationMessage').textContent = 
+        document.getElementById('confirmationMessage').innerHTML = 
             `You will pay ${formatCurrency(amount)} when picking up your order. Thank you for choosing Dry Cleaning 2!`;
+        document.getElementById('confirmationBtn').textContent = 'Done';
+        document.getElementById('confirmationBtn').style.display = 'block';
     } else {
-        document.getElementById('confirmationTitle').textContent = 'Payment Successful!';
-        document.getElementById('confirmationMessage').textContent = 
-            `Your payment has been processed successfully. Thank you for choosing Dry Cleaning 2!`;
+        // For M-Pesa, show the payment instructions
+        showMpesaInstructions(orderId, amount);
+        
+        // Update the status message to show payment was recorded
+        const statusMessage = document.getElementById('paymentStatusMessage');
+        if (statusMessage) {
+            statusMessage.innerHTML = '<strong>✓ Payment recorded! Please complete the M-Pesa transaction using the instructions above.</strong>';
+            statusMessage.style.color = 'green';
+        }
+        
+        // Update the confirm button
+        const confirmBtn = document.getElementById('confirmationBtn');
+        confirmBtn.style.display = 'block';
+        confirmBtn.textContent = 'I have completed the payment';
+        confirmBtn.onclick = function() {
+            // Close the modal after payment is confirmed
+            closeConfirmationModal();
+        };
     }
-    document.getElementById('confirmationBtn').style.display = 'block';
 }
 
 function showCashConfirmation(orderId, amount) {

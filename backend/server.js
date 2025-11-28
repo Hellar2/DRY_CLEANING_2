@@ -11,7 +11,7 @@ const app = express();
 // Middleware
 // =======================
 const allowedOrigins = [
-  'http://localhost:3000',
+  'https://dry-cleaning2.vercel.app',
   'http://127.0.0.1:3000',
   'http://localhost:5002',
   'http://127.0.0.1:5002',

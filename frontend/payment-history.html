@@ -132,19 +132,19 @@ async function loadPayments() {
 
         let paymentsData = await response.json();
         
-        // Filter to only include completed payments
-        paymentsData = paymentsData.filter(payment => payment.status === 'Completed');
-        
-        // Map the payment data to match the expected format
-        payments = paymentsData.map(payment => ({
-            id: payment._id,
-            total: payment.amount,
-            date: payment.date || new Date().toISOString(),
-            paid: true,
-            statusText: 'Paid',
-            paymentMethod: payment.method || '—',
-            orderId: payment.orderId
-        }));
+        // Map the payment data to match the expected format (include both paid and pending)
+        payments = paymentsData.map(payment => {
+            const isPaid = payment.status === 'Completed' || payment.status === 'Paid';
+            return {
+                id: payment._id,
+                total: payment.amount,
+                date: payment.date || new Date().toISOString(),
+                paid: isPaid,
+                statusText: isPaid ? 'Paid' : (payment.status || 'Pending'),
+                paymentMethod: payment.method || '—',
+                orderId: payment.orderId
+            };
+        });
 
         if (!payments.length) {
             return showNoPayments();

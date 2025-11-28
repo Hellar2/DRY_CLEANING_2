@@ -10,37 +10,43 @@ const app = express();
 // =======================
 // Middleware
 // =======================
-const allowedOrigins = [
-  'https://dry-cleaning2.vercel.app',
-  'http://127.0.0.1:3000',
-  'http://localhost:5002',
-  'http://127.0.0.1:5002',
-  'http://127.0.0.1:5501',
-  'http://localhost:5501'
-];
+// Allow all origins in development for easier testing
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [
+      'http://your-production-domain.com',
+      'https://your-production-domain.com'
+    ]
+  : ['*']; // Allow all origins in development
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin && process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
     
     // Allow all origins in development
     if (process.env.NODE_ENV !== 'production') {
+      console.log(`Allowing CORS for origin: ${origin || 'no origin'}`);
       return callback(null, true);
     }
 
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      console.error('CORS Error:', msg, 'Origin:', origin);
-      return callback(new Error(msg), false);
+    // In production, only allow specific origins
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+    console.error('CORS Error:', msg);
+    return callback(new Error(msg), false);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length', 'X-Requested-With', 'Accept', 'X-CSRF-Token'],
+  exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
   credentials: true,
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
 };
 
 // 1. Parse JSON and urlencoded data first
@@ -52,14 +58,27 @@ app.use(cors(corsOptions));
 
 // 3. Security headers
 app.use((req, res, next) => {
-  res.setHeader("Content-Security-Policy", 
-    "default-src 'self'; " +
-    "connect-src 'self' http://localhost:5002 ws://localhost:* wss://localhost:*; " +
-    "font-src 'self' https://fonts.gstatic.com data:; " +
-    "img-src 'self' data:; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"
-  );
+  // More permissive CSP for development
+  if (process.env.NODE_ENV !== 'production') {
+    res.setHeader("Content-Security-Policy", 
+      `default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; ` +
+      `connect-src 'self' http://localhost:${process.env.PORT || 5002} ws://localhost:* wss://localhost:* http://127.0.0.1:${process.env.PORT || 5002} https:; ` +
+      `font-src 'self' https://fonts.gstatic.com data:; ` +
+      `img-src 'self' data: blob:; ` +
+      `script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; ` +
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;`
+    );
+  } else {
+    // Stricter CSP for production
+    res.setHeader("Content-Security-Policy", 
+      `default-src 'self'; ` +
+      `connect-src 'self' https://dry-cleaning2.vercel.app; ` +
+      `font-src 'self' https://fonts.gstatic.com data:; ` +
+      `img-src 'self' data:; ` +
+      `script-src 'self'; ` +
+      `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;`
+    );
+  }
   next();
 });
 
@@ -140,11 +159,81 @@ mongoose.connect(MONGO_URI, {
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // =======================
+// Network Utilities
+// =======================
+function getNetworkInterfaces() {
+  const os = require('os');
+  const interfaces = os.networkInterfaces();
+  const results = [];
+
+  Object.keys(interfaces).forEach(iface => {
+    interfaces[iface].forEach(details => {
+      // Skip internal (non-IPv4) and non-internal (i.e., 127.0.0.1) addresses
+      if (details.family === 'IPv4' && !details.internal) {
+        results.push({
+          name: iface,
+          address: details.address,
+          netmask: details.netmask,
+          mac: details.mac
+        });
+      }
+    });
+  });
+
+  return results;
+}
+
+// =======================
 // Server Listener
 // =======================
 const PORT = process.env.PORT || 5002;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📝 Access login at: http://localhost:${PORT}/login.html`);
-  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
+const HOST = '0.0.0.0';
+
+// Start the server
+const server = app.listen(PORT, HOST, () => {
+  const networkInterfaces = getNetworkInterfaces();
+  
+  console.log('\n🌐 Server is running!');
+  console.log('=====================');
+  console.log(`🏠 Local:            http://localhost:${PORT}`);
+  console.log(`🌍 Network:          http://${HOST}:${PORT}`);
+  
+  // Show network interfaces
+  if (networkInterfaces.length > 0) {
+    console.log('\n🌍 Network Interfaces:');
+    networkInterfaces.forEach((iface, index) => {
+      console.log(`   ${index + 1}. ${iface.name}: http://${iface.address}:${PORT}`);
+    });
+  }
+  
+  console.log('\n🔗 Important Links:');
+  console.log(`   - Login:          http://localhost:${PORT}/login.html`);
+  console.log(`   - Health Check:   http://localhost:${PORT}/api/health`);
+  console.log(`   - API Test:       http://localhost:${PORT}/api/test`);
+  console.log('\n📝 Note: To access from other devices, use your computer\'s IP address instead of localhost');
+  console.log('=====================\n');
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use.`);
+    console.log('Try one of these solutions:');
+    console.log('1. Use a different port by setting the PORT environment variable');
+    console.log('2. Find and stop the process using port', PORT);
+    console.log('   On Windows: netstat -ano | findstr :' + PORT);
+    console.log('   Then: taskkill /F /PID <PID>');
+  } else {
+    console.error('❌ Server error:', error);
+  }
+  process.exit(1);
+});
+
+// Handle process termination
+process.on('SIGINT', () => {
+  console.log('\n🛑 Shutting down server...');
+  server.close(() => {
+    console.log('✅ Server stopped');
+    process.exit(0);
+  });
 });
